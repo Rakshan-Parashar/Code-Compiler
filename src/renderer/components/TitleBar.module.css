@@ -1,0 +1,33 @@
+.bar{height:var(--tbh);background:var(--bg1);border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;-webkit-app-region:drag;z-index:200;padding:0 8px;gap:8px}
+.left,.right{display:flex;align-items:center;gap:4px;-webkit-app-region:no-drag;flex:1}
+.right{justify-content:flex-end}
+.logo{width:26px;height:26px;border-radius:7px;background:var(--ac);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:4px}
+.nav{display:flex;-webkit-app-region:no-drag}
+.mg{position:relative}
+.mt{padding:4px 9px;border-radius:6px;font-size:12px;color:var(--t2);height:26px}
+.mt:hover{background:var(--bg3);color:var(--t1)}
+.dd{position:absolute;top:calc(100% + 5px);left:0;background:var(--bg2);border:1px solid var(--b2);border-radius:10px;min-width:210px;padding:5px;z-index:9999;box-shadow:0 20px 50px rgba(0,0,0,.7)}
+.mi{width:100%;display:flex;justify-content:space-between;align-items:center;padding:7px 10px;font-size:12px;color:var(--t2);border-radius:6px;gap:20px;text-align:left}
+.mi:hover{background:var(--bghov);color:var(--t1)}
+.sc{font-family:var(--fmono);font-size:10px;color:var(--t3)}
+.sep{height:1px;background:var(--b1);margin:4px 0}
+.pill{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;padding:5px 12px;color:var(--t3);font-size:12px;height:28px;min-width:200px;max-width:380px;cursor:text;transition:border-color .2s,box-shadow .2s,color .2s;-webkit-app-region:no-drag}
+.pill:hover{border-color:var(--ac);box-shadow:0 0 0 3px var(--acd);color:var(--t2)}
+.pillText{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t2)}
+.pillHint{font-family:var(--fmono);font-size:10px;color:var(--t4)}
+.errBadge{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.25);border-radius:8px;padding:1px 6px;font-size:10px;font-weight:600}
+.branch{display:flex;align-items:center;gap:5px;font-family:var(--fmono);font-size:11px;color:var(--t2);background:var(--bg3);border:1px solid var(--b1);border-radius:6px;padding:3px 8px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gitDot{background:var(--yellow);color:#000;border-radius:8px;padding:1px 5px;font-size:10px;font-weight:700}
+.toolBtns{display:flex;gap:2px}
+.toolBtn{width:28px;height:28px;border-radius:6px;color:var(--t3)}
+.toolBtn:hover{background:var(--bg3);color:var(--t2)}
+.toolBtnAct{color:var(--acl)!important;background:var(--acd)!important}
+.runBtn{padding:0 13px;height:26px;border-radius:7px;font-size:12px;font-weight:500;background:var(--ac);color:#fff}
+.runBtn:hover:not(:disabled){background:var(--acl)}
+.runBtn:disabled{opacity:.3;cursor:not-allowed}
+.stop{background:rgba(239,68,68,.15)!important;color:var(--red)!important;border:1px solid rgba(239,68,68,.25)}
+.stop:hover{background:rgba(239,68,68,.25)!important}
+.winBtns{display:flex;margin-left:4px}
+.wb{width:32px;height:26px;border-radius:5px;font-size:11px;color:var(--t3)}
+.wb:hover{background:var(--bg3);color:var(--t1)}
+.wbX:hover{background:rgba(239,68,68,.15);color:var(--red)}

@@ -1,0 +1,16 @@
+.bar {
+  width: var(--abw); background: var(--bg1); border-right: 1px solid var(--b1);
+  display: flex; flex-direction: column; justify-content: space-between;
+  flex-shrink: 0; padding: 8px 0;
+}
+.group { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.btn {
+  width: 38px; height: 38px; border-radius: 9px;
+  position: relative; color: var(--t4); transition: color var(--ease), background var(--ease);
+}
+.btn:hover { color: var(--t2); background: var(--bg3); }
+.act { color: var(--t1) !important; }
+.indicator {
+  position: absolute; left: -8px; top: 50%; transform: translateY(-50%);
+  width: 2px; height: 18px; background: var(--ac); border-radius: 0 2px 2px 0;
+}

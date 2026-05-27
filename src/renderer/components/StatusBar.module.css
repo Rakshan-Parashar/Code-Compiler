@@ -1,0 +1,8 @@
+.bar   { height:var(--sbh); background:var(--ac); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; padding:0 4px; }
+.left,.right { display:flex; align-items:center; }
+.item  { display:flex; align-items:center; gap:4px; padding:0 8px; height:100%; font-size:11px; color:rgba(255,255,255,.85); white-space:nowrap; border-radius:0; transition:background .1s; }
+.item:hover  { background:rgba(0,0,0,.18); }
+.brand { font-weight:600; }
+.running { color:#86efac; animation:pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+.sep   { width:1px; height:12px; background:rgba(255,255,255,.2); }
