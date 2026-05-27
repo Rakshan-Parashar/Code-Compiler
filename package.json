@@ -4,7 +4,7 @@
   "description": "Zenith IDE – Ultimate Hybrid Code Execution Environment",
   "main": "src/main/main.js",
   "scripts": {
-    "dev": "concurrently \"vite\" \"wait-on http://localhost:5174 && electron .\"",
+    "dev": "concurrently \".venv\\\\Scripts\\\\python -m uvicorn backend.main:app --reload\" \"vite\" \"wait-on http://localhost:5174 && electron .\"",
     "build": "vite build && electron-builder",
     "electron": "electron ."
   },

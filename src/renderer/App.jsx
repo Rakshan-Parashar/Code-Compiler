@@ -12,6 +12,7 @@ import AccountPanel from "./panels/AccountPanel/AccountPanel.jsx";
 import CloudPanel from "./panels/CloudPanel/CloudPanel.jsx";
 import AiPanel from "./panels/AiPanel/AiPanel.jsx";
 import NotebookPanel from "./panels/NotebookPanel/NotebookPanel.jsx";
+import CollabPanel from "./panels/CollabPanel/CollabPanel.jsx";
 import { useFiles } from "./hooks/useFiles.js";
 import { useTerminal } from "./hooks/useTerminal.js";
 import { useSettings } from "./hooks/useSettings.js";
@@ -32,6 +33,14 @@ export default function App() {
   const [splitMode, setSplitMode] = useState(false);
   const [gotoLine, setGotoLine] = useState(null);
   const dragging = useRef(false);
+
+  const [collabState, setCollabState] = useState({
+    connected: false,
+    roomId: "",
+    username: "",
+    users: []
+  });
+  const wsRef = useRef(null);
 
   const { notify, notifications, dismiss } = useNotifications();
   const { settings, updateSettings } = useSettings();
@@ -72,6 +81,80 @@ export default function App() {
   } = useFiles(notify);
   const git = useGit(rootFolderPath, notify);
   const notebooks = useNotebooks(rootFolderPath, notify);
+
+  const handleCollabConnect = useCallback((roomId, username) => {
+    if (wsRef.current) wsRef.current.close()
+
+    const wsUrl = `ws://localhost:8000/api/collaboration/${roomId}/${username}`
+    const ws = new WebSocket(wsUrl)
+    wsRef.current = ws
+
+    ws.onopen = () => {
+      setCollabState({
+        connected: true,
+        roomId,
+        username,
+        users: [username]
+      })
+      notify("success", `Connected to collaboration room: ${roomId}`)
+    }
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        if (data.type === "users") {
+          setCollabState(prev => ({ ...prev, users: data.users }))
+        } else if (data.type === "edit") {
+          // Update active file content from remote collaborator
+          if (activeFile && data.content !== activeFile.content) {
+            updateFileContent(activeFile.id, data.content, activeFile.cursor)
+          }
+        }
+      } catch (e) {
+        console.error("Error parsing websocket message:", e)
+      }
+    }
+
+    ws.onerror = (err) => {
+      notify("error", "Collaboration connection error.")
+      console.error("WebSocket error:", err)
+    }
+
+    ws.onclose = () => {
+      setCollabState({
+        connected: false,
+        roomId: "",
+        username: "",
+        users: []
+      })
+      notify("info", "Collaboration session disconnected.")
+    }
+  }, [activeFile, updateFileContent, notify])
+
+  const handleCollabDisconnect = useCallback(() => {
+    if (wsRef.current) {
+      wsRef.current.close()
+      wsRef.current = null
+    }
+  }, [])
+
+  const handleLocalEdit = useCallback((val) => {
+    if (collabState.connected && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: "edit",
+        content: val
+      }))
+    }
+  }, [collabState.connected])
+
+  const handleLocalCursor = useCallback((pos) => {
+    if (collabState.connected && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: "cursor",
+        position: pos
+      }))
+    }
+  }, [collabState.connected])
 
   const lang = activeFile ? EXT_LANG[activeFile.ext] || "plaintext" : "";
   const canRun = !!activeFile && RUNNABLE.has(activeFile.ext);
@@ -279,7 +362,7 @@ export default function App() {
   ]);
 
   const onActivity = (id) => {
-    if (["settings", "account", "cloud", "ai", "notebooks"].includes(id)) {
+    if (["settings", "account", "cloud", "ai", "notebooks", "collab"].includes(id)) {
       setOverlay(id);
       return;
     }
@@ -310,6 +393,8 @@ export default function App() {
         onPalette={() => setPalOpen(true)}
         onFormat={formatFile}
         onAI={() => setOverlay("ai")}
+        onCollab={() => setOverlay("collab")}
+        collabActive={collabState.connected}
         branch={git.branch}
         gitStatus={git.status}
         zenMode={settings.zenMode}
@@ -361,6 +446,8 @@ export default function App() {
             onSave={handleSave}
             onSplitSelect={setSplitFile}
             gotoLine={gotoLine}
+            onLocalEdit={handleLocalEdit}
+            onLocalCursor={handleLocalCursor}
           />
           {panelOpen && (
             <>
@@ -415,6 +502,15 @@ export default function App() {
           onClose={() => setOverlay(null)}
           notify={notify}
           onOpenCloud={() => setOverlay("cloud")}
+        />
+      )}
+      {overlay === "collab" && (
+        <CollabPanel
+          onClose={() => setOverlay(null)}
+          notify={notify}
+          collabState={collabState}
+          onConnect={handleCollabConnect}
+          onDisconnect={handleCollabDisconnect}
         />
       )}
       {overlay === "cloud" && (

@@ -15,6 +15,8 @@ contextBridge.exposeInMainWorld('api', {
   loadAccount:  ()        => inv('account:load'),
   saveAccount:  a         => inv('account:save', a),
   logout:       ()        => inv('account:logout'),
+  accountSignup:(name, email, password) => inv('account:signup', { name, email, password }),
+  accountLogin: (email, password) => inv('account:login', { email, password }),
   cloudList:    ()        => inv('cloud:list'),
   cloudSave:    s         => inv('cloud:save', s),
   cloudDelete:  id        => inv('cloud:delete', id),

@@ -105,14 +105,93 @@ ipcMain.handle('win:isMax',  () => win.isMaximized())
 ipcMain.handle('settings:load', () => ({ ...DEF_SETTINGS, ...jR('settings.json', {}) }))
 ipcMain.handle('settings:save', (_, s) => { jW('settings.json', s); return { ok: true } })
 
+const getBackendUrl = () => process.env.BACKEND_URL || 'http://127.0.0.1:8000'
+
+async function callBackend(endpoint, method = 'GET', body = null, useToken = true) {
+  const url = `${getBackendUrl()}${endpoint}`
+  const headers = { 'Content-Type': 'application/json' }
+  if (useToken) {
+    const acc = jR('account.json', null)
+    if (acc && acc.token) {
+      headers['Authorization'] = `Bearer ${acc.token}`
+    }
+  }
+  const options = { method, headers }
+  if (body) {
+    options.body = JSON.stringify(body)
+  }
+  try {
+    const res = await fetch(url, options)
+    const data = await res.json()
+    if (!res.ok) {
+      return { ok: false, error: data.detail || `Server error: ${res.status}` }
+    }
+    return data
+  } catch (e) {
+    return { ok: false, error: `Failed to connect to backend: ${e.message}` }
+  }
+}
+
 /* account */
 ipcMain.handle('account:load',   ()    => jR('account.json', null))
 ipcMain.handle('account:save',   (_, a) => { jW('account.json', a); return { ok: true } })
 ipcMain.handle('account:logout', ()    => { jW('account.json', null); return { ok: true } })
 
+ipcMain.handle('account:signup', async (_, { name, email, password }) => {
+  const res = await callBackend('/api/auth/signup', 'POST', { name, email, password }, false)
+  if (res.ok && res.token) {
+    const accountData = {
+      token: res.token,
+      name: res.account.name,
+      email: res.account.email,
+      createdAt: res.account.createdAt,
+      plan: res.account.plan
+    }
+    jW('account.json', accountData)
+    return { ok: true, account: accountData }
+  }
+  return res
+})
+
+ipcMain.handle('account:login', async (_, { email, password }) => {
+  const res = await callBackend('/api/auth/login', 'POST', { email, password }, false)
+  if (res.ok && res.token) {
+    const accountData = {
+      token: res.token,
+      name: res.account.name,
+      email: res.account.email,
+      createdAt: res.account.createdAt,
+      plan: res.account.plan
+    }
+    jW('account.json', accountData)
+    return { ok: true, account: accountData }
+  }
+  return res
+})
+
 /* cloud snippets */
-ipcMain.handle('cloud:list', () => jR('cloud.json', []))
-ipcMain.handle('cloud:save', (_, s) => {
+ipcMain.handle('cloud:list', async () => {
+  const res = await callBackend('/api/snippets', 'GET')
+  if (Array.isArray(res)) {
+    return res
+  }
+  return jR('cloud.json', [])
+})
+
+ipcMain.handle('cloud:save', async (_, s) => {
+  const payload = {
+    id: s.id || null,
+    name: s.name,
+    description: s.description || '',
+    language: s.language,
+    code: s.code
+  }
+  const res = await callBackend('/api/snippets', 'POST', payload)
+  if (res.ok && res.list) {
+    return { ok: true, list: res.list }
+  }
+  
+  // Fallback to local files
   const list = jR('cloud.json', [])
   const idx = list.findIndex(x => x.id === s.id)
   const entry = { ...s, updatedAt: Date.now() }
@@ -121,11 +200,19 @@ ipcMain.handle('cloud:save', (_, s) => {
   jW('cloud.json', list)
   return { ok: true, list }
 })
-ipcMain.handle('cloud:delete', (_, id) => {
+
+ipcMain.handle('cloud:delete', async (_, id) => {
+  if (id && id.startsWith('snip_')) {
+    const res = await callBackend(`/api/snippets/${id}`, 'DELETE')
+    if (res.ok && res.list) {
+      return { ok: true, list: res.list }
+    }
+  }
   const list = jR('cloud.json', []).filter(s => s.id !== id)
   jW('cloud.json', list)
   return { ok: true, list }
 })
+
 
 /* recent + bookmarks */
 const addRecent = fp => { let r = jR('recent.json', []).filter(p => p !== fp); r.unshift(fp); jW('recent.json', r.slice(0, 25)) }

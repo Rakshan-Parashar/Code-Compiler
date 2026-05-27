@@ -55,7 +55,11 @@ const THEME = {
   },
 }
 
-export default function EditorArea({ openFiles, activeFile, settings, language, onSelectTab, onCloseTab, onChangeContent, onRun, onSave, gotoLine }) {
+export default function EditorArea({ 
+  openFiles, activeFile, settings, language, 
+  onSelectTab, onCloseTab, onChangeContent, onRun, onSave, gotoLine,
+  onLocalEdit, onLocalCursor
+}) {
   const editorRef = useRef(null)
   const monacoRef = useRef(null)
   const themeSet  = useRef(false)
@@ -94,7 +98,10 @@ export default function EditorArea({ openFiles, activeFile, settings, language, 
     });
 
     editor.onDidChangeCursorPosition(e => {
-      if (activeFile) onChangeContent(activeFile.id, editor.getValue(), { line: e.position.lineNumber, col: e.position.column })
+      if (activeFile) {
+        onChangeContent(activeFile.id, editor.getValue(), { line: e.position.lineNumber, col: e.position.column })
+        onLocalCursor?.({ line: e.position.lineNumber, col: e.position.column })
+      }
     })
   }
 
@@ -102,8 +109,9 @@ export default function EditorArea({ openFiles, activeFile, settings, language, 
     if (activeFile && val !== undefined) {
       const pos = editorRef.current?.getPosition()
       onChangeContent(activeFile.id, val, pos ? { line: pos.lineNumber, col: pos.column } : undefined)
+      onLocalEdit?.(val)
     }
-  }, [activeFile, onChangeContent])
+  }, [activeFile, onChangeContent, onLocalEdit])
 
   const handleDiffMount = (editor, monaco) => {
     if (!themeSet.current) {

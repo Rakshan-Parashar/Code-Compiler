@@ -6,22 +6,63 @@ export default function AccountPanel({ onClose, notify, onOpenCloud }) {
   const [form, setForm]       = useState({ name:'', email:'', password:'' })
   const [tab, setTab]         = useState('login')
   const [loading, setLoading] = useState(false)
+  const [snippetsCount, setSnippetsCount] = useState(0)
+  const [filesSavedCount, setFilesSavedCount] = useState(0)
 
-  useEffect(() => { window.api?.loadAccount().then(a => { if (a) setAccount(a) }) }, [])
+  const fetchStats = () => {
+    window.api?.cloudList().then(list => {
+      if (Array.isArray(list)) setSnippetsCount(list.length)
+    })
+    window.api?.loadRecent().then(recent => {
+      if (Array.isArray(recent)) setFilesSavedCount(recent.length)
+    })
+  }
+
+  useEffect(() => {
+    window.api?.loadAccount().then(a => {
+      if (a) {
+        setAccount(a)
+        fetchStats()
+      }
+    })
+  }, [])
 
   const login = async () => {
     if (!form.email || !form.password) { notify?.('error', 'Email and password required'); return }
     setLoading(true)
-    await new Promise(r => setTimeout(r, 800)) // simulate network
-    const a = { name: form.name || form.email.split('@')[0], email: form.email, avatar: null, createdAt: Date.now(), plan: 'free' }
-    await window.api?.saveAccount(a)
-    setAccount(a); setLoading(false)
-    notify?.('success', `Welcome, ${a.name}!`)
+    try {
+      let res
+      if (tab === 'login') {
+        res = await window.api?.accountLogin(form.email, form.password)
+      } else {
+        if (!form.name.trim()) { notify?.('error', 'Name is required for Sign Up'); setLoading(false); return }
+        res = await window.api?.accountSignup(form.name.trim(), form.email, form.password)
+      }
+      if (res && res.ok) {
+        setAccount(res.account)
+        notify?.('success', tab === 'login' ? `Welcome back, ${res.account.name}!` : 'Account created successfully!')
+        // Fetch stats after login/signup
+        window.api?.cloudList().then(list => {
+          if (Array.isArray(list)) setSnippetsCount(list.length)
+        })
+        window.api?.loadRecent().then(recent => {
+          if (Array.isArray(recent)) setFilesSavedCount(recent.length)
+        })
+      } else {
+        notify?.('error', res?.error || 'Authentication failed')
+      }
+    } catch (e) {
+      notify?.('error', e.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const logout = async () => {
     await window.api?.logout()
     setAccount(null); setForm({ name:'', email:'', password:'' })
+    setSnippetsCount(0)
+    setFilesSavedCount(0)
     notify?.('info', 'Signed out')
   }
 
@@ -87,8 +128,8 @@ export default function AccountPanel({ onClose, notify, onOpenCloud }) {
           {account ? (
             <div className={S.accountActions}>
               <div className={S.statsRow}>
-                <StatBox label="Snippets" value="—" icon="☁" />
-                <StatBox label="Files Saved" value="—" icon="💾" />
+                <StatBox label="Snippets" value={snippetsCount} icon="☁" />
+                <StatBox label="Files Saved" value={filesSavedCount} icon="💾" />
                 <StatBox label="Member Since" value={new Date(account.createdAt).toLocaleDateString('en-US',{month:'short',year:'numeric'})} icon="📅" />
               </div>
               <button className={S.cloudBtn} onClick={() => { onOpenCloud(); onClose() }}>
@@ -104,7 +145,7 @@ export default function AccountPanel({ onClose, notify, onOpenCloud }) {
 
           {!account && (
             <p className={S.disclaimer}>
-              Account data is stored locally on your device. Cloud sync coming soon.
+              Accounts and snippets are securely synchronized with the MongoDB cloud database.
             </p>
           )}
         </div>
