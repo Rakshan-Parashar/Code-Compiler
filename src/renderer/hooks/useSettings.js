@@ -8,6 +8,7 @@ const DEF = {
   showIndentGuides: true, renderWhitespace: 'selection',
   smoothScrolling: true, stickyScroll: true, bracketPairColors: true,
   zenMode: false, liveErrors: true,
+  aiProvider: 'ollama', geminiApiKey: '', ollamaModel: 'codellama',
 }
 export function useSettings() {
   const [settings, setSettings] = useState(DEF)

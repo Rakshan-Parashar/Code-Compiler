@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import S from './Panel.module.css'
+import S from '../Panel.module.css'
 
 const LANG_LABELS = { javascript:'JS', typescript:'TS', python:'PY', html:'HTML', css:'CSS', json:'JSON', bash:'SH', default:'TXT' }
 

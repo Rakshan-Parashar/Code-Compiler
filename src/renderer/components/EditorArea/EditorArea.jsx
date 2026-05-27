@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback } from 'react'
-import Editor from '@monaco-editor/react'
+import Editor, { DiffEditor } from '@monaco-editor/react'
 import S from './EditorArea.module.css'
 
 const FC = { js:'#f7df1e',jsx:'#61dafb',ts:'#3178c6',tsx:'#61dafb',py:'#3776ab',html:'#e34f26',css:'#1572b6',json:'#cbcb41',md:'#519aba',sh:'#89e051',rs:'#dea584',go:'#79d4fd',java:'#f89820',rb:'#cc342d',default:'#6b7280' }
@@ -55,10 +55,18 @@ const THEME = {
   },
 }
 
-export default function EditorArea({ openFiles, activeFile, settings, language, onSelectTab, onCloseTab, onChangeContent, onRun, onSave }) {
+export default function EditorArea({ openFiles, activeFile, settings, language, onSelectTab, onCloseTab, onChangeContent, onRun, onSave, gotoLine }) {
   const editorRef = useRef(null)
   const monacoRef = useRef(null)
   const themeSet  = useRef(false)
+
+  useEffect(() => {
+    if (editorRef.current && gotoLine) {
+      editorRef.current.revealLineInCenter(gotoLine.line)
+      editorRef.current.setPosition({ lineNumber: gotoLine.line, column: 1 })
+      editorRef.current.focus()
+    }
+  }, [gotoLine])
 
   const handleMount = (editor, monaco) => {
     editorRef.current  = editor
@@ -70,6 +78,21 @@ export default function EditorArea({ openFiles, activeFile, settings, language, 
     }
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, onSave)
     editor.addCommand(monaco.KeyCode.F5, onRun)
+    
+    // Forward keyboard shortcuts to global window listener
+    editor.onKeyDown(e => {
+      const m = e.ctrlKey || e.metaKey;
+      const key = e.browserEvent.key.toLowerCase();
+      if (
+        (m && ['s', 'o', 'n', 'e', 'p', 'f', 'k', '`', '\\', ',', 'g', 'm'].includes(key)) ||
+        ['f5', 'f11', 'escape'].includes(key)
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.dispatchEvent(new KeyboardEvent('keydown', e.browserEvent));
+      }
+    });
+
     editor.onDidChangeCursorPosition(e => {
       if (activeFile) onChangeContent(activeFile.id, editor.getValue(), { line: e.position.lineNumber, col: e.position.column })
     })
@@ -81,6 +104,38 @@ export default function EditorArea({ openFiles, activeFile, settings, language, 
       onChangeContent(activeFile.id, val, pos ? { line: pos.lineNumber, col: pos.column } : undefined)
     }
   }, [activeFile, onChangeContent])
+
+  const handleDiffMount = (editor, monaco) => {
+    if (!themeSet.current) {
+      monaco.editor.defineTheme('zenith', THEME)
+      monaco.editor.setTheme('zenith')
+      themeSet.current = true
+    }
+    const modifiedEditor = editor.getModifiedEditor()
+    modifiedEditor.onDidChangeModelContent(() => {
+      if (activeFile) {
+        const val = modifiedEditor.getValue()
+        const pos = modifiedEditor.getPosition()
+        onChangeContent(activeFile.id, val, pos ? { line: pos.lineNumber, col: pos.column } : undefined)
+      }
+    })
+    modifiedEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, onSave)
+    modifiedEditor.addCommand(monaco.KeyCode.F5, onRun)
+
+    // Forward keyboard shortcuts to global window listener
+    modifiedEditor.onKeyDown(e => {
+      const m = e.ctrlKey || e.metaKey;
+      const key = e.browserEvent.key.toLowerCase();
+      if (
+        (m && ['s', 'o', 'n', 'e', 'p', 'f', 'k', '`', '\\', ',', 'g', 'm'].includes(key)) ||
+        ['f5', 'f11', 'escape'].includes(key)
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.dispatchEvent(new KeyboardEvent('keydown', e.browserEvent));
+      }
+    });
+  }
 
   useEffect(() => {
     if (editorRef.current && activeFile) {
@@ -157,17 +212,29 @@ export default function EditorArea({ openFiles, activeFile, settings, language, 
         {!openFiles.length
           ? <Welcome />
           : activeFile
-            ? <Editor
-                key={activeFile.id}
-                height="100%"
-                theme="zenith"
-                language={EL[activeFile.ext] || 'plaintext'}
-                value={activeFile.content || ''}
-                onChange={handleChange}
-                onMount={handleMount}
-                options={opts}
-                loading={<div className={S.loading}>Loading editor…</div>}
-              />
+            ? activeFile.diffMode
+              ? <DiffEditor
+                  key={`diff_${activeFile.id}`}
+                  height="100%"
+                  theme="zenith"
+                  language={EL[activeFile.ext] || 'plaintext'}
+                  original={activeFile.originalContent || ''}
+                  modified={activeFile.content || ''}
+                  onMount={handleDiffMount}
+                  options={opts}
+                  loading={<div className={S.loading}>Loading diff…</div>}
+                />
+              : <Editor
+                  key={activeFile.id}
+                  height="100%"
+                  theme="zenith"
+                  language={EL[activeFile.ext] || 'plaintext'}
+                  value={activeFile.content || ''}
+                  onChange={handleChange}
+                  onMount={handleMount}
+                  options={opts}
+                  loading={<div className={S.loading}>Loading editor…</div>}
+                />
             : null
         }
       </div>
@@ -176,6 +243,10 @@ export default function EditorArea({ openFiles, activeFile, settings, language, 
 }
 
 function Welcome() {
+  const isMac = typeof navigator !== 'undefined' && navigator.userAgent.includes('Mac');
+  const mod = isMac ? '⌘' : 'Ctrl+';
+  const shift = isMac ? '⇧' : 'Shift+';
+
   return (
     <div className={S.welcome}>
       <div className={S.wInner}>
@@ -186,7 +257,7 @@ function Welcome() {
         <p className={S.wSub}>Hybrid Code Execution Environment</p>
 
         <div className={S.wActions}>
-          {[['📄','New File','⌘N',() => window.api?.openFile()],['📂','Open File','⌘O',() => window.api?.openFile()],['🗂','Open Folder','⌘⇧O',() => window.api?.openFolder()]].map(([icon,label,hint,fn]) => (
+          {[['📄','New File',`${mod}N`,() => window.api?.openFile()],['📂','Open File',`${mod}O`,() => window.api?.openFile()],['🗂','Open Folder',`${mod}${shift}O`,() => window.api?.openFolder()]].map(([icon,label,hint,fn]) => (
             <button key={label} className={S.wBtn} onClick={fn}>
               <span className={S.wBtnIcon}>{icon}</span>
               <span className={S.wBtnLabel}>{label}</span>
@@ -204,7 +275,7 @@ function Welcome() {
           </div>
           <div className={S.wSection}>
             <h3>Shortcuts</h3>
-            {[['F5','Run file'],['⌘S','Save'],['⌘⇧P','Command palette'],['⌘`','Toggle terminal'],['⌘⇧E','Toggle sidebar'],['⌘N','New file']].map(([k,l]) => (
+            {[[isMac ? 'F5' : 'F5','Run file'],[`${mod}S`,'Save'],[`${mod}${shift}P`,'Command palette'],[`${mod}\``,'Toggle terminal'],[`${mod}${shift}E`,'Toggle sidebar'],[`${mod}N`,'New file'],[`${mod}${shift}G`,'Git Sidebar'],[`${mod},`,'Open Settings'],[`${mod}${shift}M`,'Zenith Notebooks']].map(([k,l]) => (
               <div key={k} className={S.sc}><kbd className={S.kbd}>{k}</kbd><span>{l}</span></div>
             ))}
           </div>

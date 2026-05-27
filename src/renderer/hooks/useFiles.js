@@ -32,6 +32,37 @@ export function useFiles(notify) {
     setOpenFiles(p => [...p, f]); setActiveFileId(f.id)
   }, [openFiles, notify])
 
+  const openFileDiff = useCallback(async (filePath) => {
+    if (!rootFolderPath) return
+    const headRes = await window.api.gitShowHead(rootFolderPath, filePath)
+    const originalContent = headRes.ok ? headRes.out : ''
+
+    const fileRes = await window.api.readFile(filePath)
+    if (fileRes?.error) { notify?.('error', fileRes.error); return }
+
+    const existing = openFiles.find(f => f.path && f.path === filePath)
+    if (existing) {
+      setOpenFiles(prev => prev.map(f => f.id === existing.id ? { ...f, diffMode: true, originalContent } : f))
+      setActiveFileId(existing.id)
+      return
+    }
+
+    const f = { 
+      id: mkId(), 
+      name: fileRes.name + ' (Diff)', 
+      path: fileRes.path, 
+      ext: fileRes.ext, 
+      content: fileRes.content, 
+      _saved: fileRes.content, 
+      modified: false, 
+      cursor: { line: 1, col: 1 },
+      diffMode: true,
+      originalContent
+    }
+    setOpenFiles(p => [...p, f])
+    setActiveFileId(f.id)
+  }, [openFiles, rootFolderPath, notify])
+
   const closeFile = useCallback((fileId) => {
     setOpenFiles(prev => {
       const idx  = prev.findIndex(f => f.id === fileId)
@@ -146,7 +177,7 @@ export function useFiles(notify) {
 
   return {
     openFiles, activeFile, splitFile, folderTree, folderName, rootFolderPath, lintErrors,
-    openFile, closeFile, setActiveFile, setSplitFile, updateFileContent,
+    openFile, openFileDiff, closeFile, setActiveFile, setSplitFile, updateFileContent,
     openFolder, openFileFromDisk, saveFile, saveFileAs,
     newFile, newFolder, deleteItem, renameItem, refreshTree, formatFile, runLint,
   }

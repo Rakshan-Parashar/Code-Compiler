@@ -12,12 +12,12 @@ function FIcon({ ext }) {
 }
 
 /* ── root ── */
-export default function Sidebar({ activity, folderTree, folderName, rootFolderPath, openFiles, activeFile, onOpenFile, onOpenFolder, onNewFile, onNewFolder, onDeleteItem, onRenameItem, onRefresh, notify }) {
+export default function Sidebar({ activity, folderTree, folderName, rootFolderPath, openFiles, activeFile, onOpenFile, onOpenFileDiff, onOpenFolder, onNewFile, onNewFolder, onDeleteItem, onRenameItem, onRefresh, notify, git }) {
   return (
     <aside className={S.sidebar}>
       {activity === 'explorer'   && <Explorer {...{ folderTree, folderName, rootFolderPath, openFiles, activeFile, onOpenFile, onOpenFolder, onNewFile, onNewFolder, onDeleteItem, onRenameItem, onRefresh }} />}
       {activity === 'search'     && <SearchPane openFiles={openFiles} onOpenFile={onOpenFile} />}
-      {activity === 'git'        && <GitPane />}
+      {activity === 'git'        && <GitPane git={git} onOpenFileDiff={onOpenFileDiff} rootFolderPath={rootFolderPath} />}
       {activity === 'extensions' && <ExtPane notify={notify} />}
     </aside>
   )
@@ -172,14 +172,240 @@ function SearchPane({ openFiles, onOpenFile }) {
 }
 
 /* ── Git ── */
-function GitPane() {
+function GitPane({ git, onOpenFileDiff, rootFolderPath }) {
+  const [msg, setMsg] = useState('')
+  const [committing, setCommitting] = useState(false)
+
+  if (!git) return null
+
+  if (!git.hasGit) {
+    return (
+      <div className={S.pane}>
+        <div className={S.hdr}><span className={S.hdrTitle}>SOURCE CONTROL</span></div>
+        <div className={S.bigEmpty} style={{ padding: '24px 16px', textAlign: 'center' }}>
+          <svg viewBox="0 0 48 48" fill="none" width="38" style={{ color: '#8c8c9e', marginBottom: '12px' }}><circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="1.5"/><circle cx="12" cy="36" r="5" stroke="currentColor" strokeWidth="1.5"/><circle cx="36" cy="12" r="5" stroke="currentColor" strokeWidth="1.5"/><path d="M12 17v14M13.5 12H30c3 0 5 2 5 5v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          <p style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold', marginBottom: '6px' }}>No git repository</p>
+          <span style={{ color: '#8c8c9e', fontSize: '11px', display: 'block', marginBottom: '16px' }}>This folder is not a Git repository.</span>
+          <button 
+            onClick={git.init}
+            style={{
+              background: 'var(--ac)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '6px 12px',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              cursor: 'pointer'
+            }}
+          >
+            Initialize Repository
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  const handleCommit = async (e) => {
+    e.preventDefault()
+    if (!msg.trim()) return
+    setCommitting(true)
+    await git.commit(msg)
+    setMsg('')
+    setCommitting(false)
+  }
+
+  const unstagedFiles = git.status.filter(f => f.status === '??' || f.status === ' M' || f.status === ' D' || f.status === 'AM')
+  const stagedFiles = git.status.filter(f => f.status === 'A ' || f.status === 'M ' || f.status === 'D ')
+
   return (
-    <div className={S.pane}>
-      <div className={S.hdr}><span className={S.hdrTitle}>SOURCE CONTROL</span></div>
-      <div className={S.bigEmpty}>
-        <svg viewBox="0 0 48 48" fill="none" width="38"><circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="1.5"/><circle cx="12" cy="36" r="5" stroke="currentColor" strokeWidth="1.5"/><circle cx="36" cy="12" r="5" stroke="currentColor" strokeWidth="1.5"/><path d="M12 17v14M13.5 12H30c3 0 5 2 5 5v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-        <p>No git repository</p>
-        <span>Open a folder with a .git directory</span>
+    <div className={S.pane} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div className={S.hdr}>
+        <span className={S.hdrTitle}>SOURCE CONTROL ({git.branch})</span>
+        <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+          <button onClick={git.pull} title="Pull" style={{ background: 'none', border: 'none', color: '#8c8c9e', cursor: 'pointer', fontSize: '12px' }}>⬇️</button>
+          <button onClick={git.push} title="Push" style={{ background: 'none', border: 'none', color: '#8c8c9e', cursor: 'pointer', fontSize: '12px' }}>⬆️</button>
+          <button onClick={git.refresh} title="Refresh" style={{ background: 'none', border: 'none', color: '#8c8c9e', cursor: 'pointer', fontSize: '12px' }}>🔄</button>
+        </div>
+      </div>
+
+      <div style={{ padding: '12px' }}>
+        <form onSubmit={handleCommit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <input 
+            type="text" 
+            placeholder="Commit message (Ctrl+Enter to commit)" 
+            value={msg} 
+            onChange={e => setMsg(e.target.value)}
+            style={{
+              background: '#0d0d12',
+              border: '1px solid #2d2d38',
+              borderRadius: '4px',
+              padding: '6px 10px',
+              color: '#fff',
+              fontSize: '12px',
+              outline: 'none'
+            }}
+            onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey) handleCommit(e) }}
+          />
+          <button 
+            type="submit" 
+            disabled={committing || !msg.trim() || git.status.length === 0}
+            style={{
+              background: msg.trim() && git.status.length > 0 ? 'var(--ac)' : '#2d2d38',
+              color: msg.trim() && git.status.length > 0 ? '#fff' : '#8c8c9e',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '6px 12px',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              cursor: msg.trim() && git.status.length > 0 ? 'pointer' : 'not-allowed'
+            }}
+          >
+            {committing ? 'Committing...' : '✓ Commit'}
+          </button>
+        </form>
+      </div>
+
+      {/* File List */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 12px' }}>
+        {git.status.length === 0 ? (
+          <div style={{ textAlign: 'center', color: '#8c8c9e', fontSize: '11px', marginTop: '24px' }}>
+            No changes detected in repository.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            
+            {/* Staged Changes */}
+            {stagedFiles.length > 0 && (
+              <div>
+                <div style={{ color: '#fff', fontSize: '11px', fontWeight: 'bold', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Staged Changes ({stagedFiles.length})</div>
+                {stagedFiles.map(f => (
+                  <GitFileRow 
+                    key={f.path} 
+                    file={f} 
+                    staged={true} 
+                    git={git} 
+                    onOpenFileDiff={onOpenFileDiff} 
+                    rootFolderPath={rootFolderPath} 
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Unstaged Changes */}
+            {unstagedFiles.length > 0 && (
+              <div>
+                <div style={{ color: '#fff', fontSize: '11px', fontWeight: 'bold', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Changes ({unstagedFiles.length})</div>
+                {unstagedFiles.map(f => (
+                  <GitFileRow 
+                    key={f.path} 
+                    file={f} 
+                    staged={false} 
+                    git={git} 
+                    onOpenFileDiff={onOpenFileDiff} 
+                    rootFolderPath={rootFolderPath} 
+                  />
+                ))}
+              </div>
+            )}
+
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function GitFileRow({ file, staged, git, onOpenFileDiff, rootFolderPath }) {
+  const filePath = rootFolderPath + '/' + file.path
+  const stat = file.status.trim()
+  const isUntracked = stat === '??'
+  
+  let label = 'M'
+  let color = '#d97706' // yellow for modified
+  if (isUntracked) {
+    label = 'U'
+    color = '#059669' // green for untracked
+  } else if (stat === 'A') {
+    label = 'A'
+    color = '#38bdf8' // blue for added
+  } else if (stat === 'D') {
+    label = 'D'
+    color = '#dc2626' // red for deleted
+  }
+
+  const handleStageClick = (e) => {
+    e.stopPropagation()
+    staged ? git.unstage(file.path) : git.stage(file.path)
+  }
+
+  const handleDiscardClick = (e) => {
+    e.stopPropagation()
+    if (window.confirm(`Are you sure you want to discard all changes to ${file.path}?`)) {
+      git.discard(file.path)
+    }
+  }
+
+  return (
+    <div 
+      onClick={() => onOpenFileDiff(filePath)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '6px 8px',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        background: 'transparent',
+        fontSize: '12px',
+        color: '#e0e0e8',
+        margin: '2px 0',
+        transition: 'background 0.2s'
+      }}
+      onMouseEnter={e => e.currentTarget.style.background = '#1a1a24'}
+      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1, paddingRight: '8px' }}>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 'bold' }}>
+          {file.path.split('/').pop()}
+        </span>
+        <span style={{ fontSize: '10px', color: '#8c8c9e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {file.path}
+        </span>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <button 
+          onClick={handleStageClick} 
+          title={staged ? 'Unstage' : 'Stage'} 
+          style={{ background: 'none', border: 'none', color: '#8c8c9e', cursor: 'pointer', padding: '2px', fontSize: '11px' }}
+        >
+          {staged ? '➖' : '➕'}
+        </button>
+        
+        {!staged && !isUntracked && (
+          <button 
+            onClick={handleDiscardClick} 
+            title="Discard changes" 
+            style={{ background: 'none', border: 'none', color: '#8c8c9e', cursor: 'pointer', padding: '2px', fontSize: '11px' }}
+          >
+            ↺
+          </button>
+        )}
+
+        <span style={{ 
+          fontSize: '9px', 
+          fontWeight: 'bold', 
+          background: `${color}22`, 
+          color: color, 
+          border: `1px solid ${color}44`,
+          borderRadius: '3px',
+          padding: '1px 4px',
+          width: '16px',
+          textAlign: 'center'
+        }}>
+          {label}
+        </span>
       </div>
     </div>
   )

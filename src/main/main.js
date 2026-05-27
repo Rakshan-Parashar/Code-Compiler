@@ -4,6 +4,26 @@ const fs = require('fs')
 const os = require('os')
 const { spawn, execSync } = require('child_process')
 
+// Load .env file at root level
+try {
+  const envPath = path.join(__dirname, '../../.env')
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf-8')
+    envContent.split(/\r?\n/).forEach(line => {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith('#')) return
+      const idx = trimmed.indexOf('=')
+      if (idx > 0) {
+        const key = trimmed.substring(0, idx).trim()
+        const val = trimmed.substring(idx + 1).trim().replace(/^['"]|['"]$/g, '')
+        process.env[key] = val
+      }
+    })
+  }
+} catch (e) {
+  console.error('Failed to load .env file:', e)
+}
+
 const isDev = process.env.NODE_ENV !== 'production'
 let win = null, runningProcess = null, ptyProcess = null
 
@@ -19,6 +39,7 @@ const DEF_SETTINGS = {
   showIndentGuides: true, renderWhitespace: 'selection',
   smoothScrolling: true, stickyScroll: true, bracketPairColors: true,
   zenMode: false, liveErrors: true,
+  aiProvider: 'ollama', geminiApiKey: '', ollamaModel: 'codellama',
 }
 
 function createWindow() {
@@ -33,8 +54,33 @@ function createWindow() {
       contextIsolation: true, nodeIntegration: false, sandbox: false,
     },
   })
-  if (isDev) win.loadURL('http://localhost:5174')
-  else win.loadFile(path.join(__dirname, '../../dist/index.html'))
+  if (isDev) {
+    win.loadURL('http://localhost:5174')
+    // Force DevTools to start closed on launch
+    win.webContents.closeDevTools()
+    
+    // Register shortcuts to manually toggle DevTools in dev mode
+    win.webContents.on('before-input-event', (event, input) => {
+      if ((input.control || input.meta) && input.shift && input.key.toLowerCase() === 'i') {
+        win.webContents.toggleDevTools()
+        event.preventDefault()
+      }
+      if (input.key === 'F12') {
+        win.webContents.toggleDevTools()
+        event.preventDefault()
+      }
+    })
+  } else {
+    win.loadFile(path.join(__dirname, '../../dist/index.html'))
+  }
+  
+  // Forward renderer console messages to terminal console for easy debugging
+  win.webContents.on('console-message', (event, level, message, line, sourceId) => {
+    if (level >= 2) { // 2 = warning, 3 = error
+      console.log(`[Renderer Error] ${message} (Line: ${line})`);
+    }
+  });
+
   Menu.setApplicationMenu(null)
   win.on('maximize',          () => win.webContents.send('win:state', 'maximized'))
   win.on('unmaximize',        () => win.webContents.send('win:state', 'normal'))
@@ -212,6 +258,11 @@ ipcMain.handle('git:log',     (_, cwd) => {
   return { ok: true, commits }
 })
 ipcMain.handle('git:diff',    (_, { cwd, file }) => git(`diff HEAD -- "${file}"`, cwd))
+ipcMain.handle('git:showHead', (_, { cwd, file }) => {
+  const relativePath = path.isAbsolute(file) ? path.relative(cwd, file) : file
+  const gitPath = relativePath.replace(/\\/g, '/')
+  return git(`show "HEAD:${gitPath}"`, cwd)
+})
 ipcMain.handle('git:stage',   (_, { cwd, file }) => git(`add "${file}"`, cwd))
 ipcMain.handle('git:unstage', (_, { cwd, file }) => git(`restore --staged "${file}"`, cwd))
 ipcMain.handle('git:commit',  (_, { cwd, msg })  => git(`commit -m "${msg.replace(/"/g, "'")}"`, cwd))
@@ -287,6 +338,150 @@ ipcMain.on('pty:write',  (_, d) => { if (ptyProcess) ptyProcess.write(d) })
 ipcMain.on('pty:resize', (_, { cols, rows }) => { if (ptyProcess) try { ptyProcess.resize(cols, rows) } catch {} })
 ipcMain.handle('pty:kill', () => { if (ptyProcess) { try { ptyProcess.kill() } catch {} ptyProcess = null } })
 
+/* ai code review & chat */
+let currentAiController = null
+
+async function callAi(prompt, provider, apiKey, model, options = {}) {
+  const signal = options.signal
+  if (provider === 'gemini') {
+    const key = apiKey || process.env.GEMINI_API_KEY
+    if (!key) throw new Error('Gemini API Key is missing. Please add it in Settings or the .env file.')
+    const geminiModel = (model && model.startsWith('gemini-')) ? model : 'gemini-flash-latest'
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.3, maxOutputTokens: 1200 }
+      }),
+      signal
+    })
+    if (!res.ok) {
+      const errText = await res.text()
+      let parsedErr = ''
+      try { parsedErr = JSON.parse(errText).error.message } catch { parsedErr = errText }
+      throw new Error(`Gemini API Error: ${parsedErr}`)
+    }
+    const data = await res.json()
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+  } else {
+    // Ollama
+    const host = 'http://localhost:11434'
+    let res
+    try {
+      res = await fetch(`${host}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: model || 'codellama',
+          messages: [{ role: 'user', content: prompt }],
+          stream: false,
+          options: { temperature: 0.3, num_predict: 1000 }
+        }),
+        signal
+      })
+    } catch (e) {
+      if (e.name === 'AbortError') throw e
+      throw new Error(`Failed to connect to local Ollama at ${host}. Make sure Ollama is installed and running, or switch your AI Provider to Google Gemini in settings.`)
+    }
+    if (!res.ok) throw new Error(`Ollama Error: ${res.status} ${res.statusText}. Make sure Ollama is running.`)
+    const data = await res.json()
+    return data.message?.content || ''
+  }
+}
+
+ipcMain.handle('ai:chat', async (_, { prompt, provider, apiKey, model }) => {
+  if (currentAiController) currentAiController.abort()
+  currentAiController = new AbortController()
+  try {
+    const response = await callAi(prompt, provider, apiKey, model, { signal: currentAiController.signal })
+    return { ok: true, response }
+  } catch (e) {
+    if (e.name === 'AbortError') return { ok: false, canceled: true, error: 'Request canceled' }
+    return { ok: false, error: e.message }
+  } finally {
+    currentAiController = null
+  }
+})
+
+ipcMain.handle('ai:review', async (_, { code, language, provider, apiKey, model }) => {
+  if (currentAiController) currentAiController.abort()
+  currentAiController = new AbortController()
+  const signal = currentAiController.signal
+
+  try {
+    // Step 1: Quick Syntax Check
+    win.webContents.send('ai:progress', { phase: 'syntax', status: 'running', msg: 'Performing quick syntax check...' })
+    const syntaxPrompt = `Quickly identify critical syntax errors in this ${language} code. List each with line number in format: [Line X] Error: Description\n\n"""\n${code}\n"""`
+    const syntaxResult = await callAi(syntaxPrompt, provider, apiKey, model, { signal })
+    
+    if (signal.aborted) { const err = new Error('Aborted'); err.name = 'AbortError'; throw err; }
+    win.webContents.send('ai:progress', { phase: 'syntax', status: 'done', data: syntaxResult })
+
+    // Step 2: Detailed Analysis (with Chunking if needed)
+    win.webContents.send('ai:progress', { phase: 'detailed', status: 'running', msg: 'Performing detailed code analysis...' })
+    
+    // Simple line-based chunker
+    const lines = code.split('\n')
+    const maxLinesPerChunk = 70
+    const chunks = []
+    for (let i = 0; i < lines.length; i += maxLinesPerChunk) {
+      const chunkLines = lines.slice(i, i + maxLinesPerChunk)
+      const startLine = i + 1
+      chunks.push({
+        startLine,
+        code: chunkLines.join('\n')
+      })
+    }
+
+    let detailedResult = ''
+    for (let i = 0; i < chunks.length; i++) {
+      if (signal.aborted) { const err = new Error('Aborted'); err.name = 'AbortError'; throw err; }
+      
+      const chunk = chunks[i]
+      win.webContents.send('ai:progress', {
+        phase: 'detailed',
+        status: 'chunk',
+        current: i + 1,
+        total: chunks.length,
+        msg: `Analyzing lines ${chunk.startLine} to ${chunk.startLine + chunk.code.split('\n').length - 1}...`
+      })
+
+      const detailedPrompt = `Analyze this ${language} code chunk (starting at line ${chunk.startLine}) for logic, performance, and styling issues. Provide constructive suggestions. List each issue with a line number in format: [Line X] Suggestion: Description\n\n"""\n${chunk.code}\n"""`
+      const chunkResult = await callAi(detailedPrompt, provider, apiKey, model, { signal })
+      
+      detailedResult += `\n### Section (Lines ${chunk.startLine} - ${chunk.startLine + chunk.code.split('\n').length - 1})\n` + chunkResult + '\n'
+    }
+
+    if (signal.aborted) { const err = new Error('Aborted'); err.name = 'AbortError'; throw err; }
+    win.webContents.send('ai:progress', { phase: 'detailed', status: 'done', data: detailedResult })
+    return { ok: true }
+  } catch (e) {
+    if (e.name === 'AbortError' || signal.aborted) {
+      win.webContents.send('ai:progress', { phase: 'canceled', msg: 'Code review canceled.' })
+      return { ok: false, canceled: true, error: 'Review canceled.' }
+    }
+    win.webContents.send('ai:progress', { phase: 'error', error: e.message })
+    return { ok: false, error: e.message }
+  } finally {
+    currentAiController = null
+  }
+})
+
+ipcMain.handle('ai:cancel', () => {
+  if (currentAiController) {
+    currentAiController.abort()
+    currentAiController = null
+    return { ok: true }
+  }
+  return { ok: false }
+})
+
+ipcMain.handle('ai:hasEnvKey', () => {
+  return !!process.env.GEMINI_API_KEY
+})
+
 /* lint + format */
 ipcMain.handle('lint:js', (_, code) => {
   const errors = []
@@ -320,7 +515,9 @@ ipcMain.handle('watch:stop', (_, fp) => { const w = watchers.get(fp); if (w) { w
 
 /* notebooks */
 const getNotebooksDir = (root) => {
-  if (!root) throw new Error('Project folder not specified');
+  if (!root) {
+    return path.join(app.getPath('userData'), 'notebooks');
+  }
   return path.join(root, '.zenith', 'notebooks');
 };
 

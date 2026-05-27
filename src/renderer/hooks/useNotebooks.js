@@ -5,7 +5,6 @@ export function useNotebooks(rootFolderPath, notify) {
   const [activeNotebook, setActiveNotebook] = useState(null);
 
   const refreshNotebooks = useCallback(async () => {
-    if (!rootFolderPath) return;
     const res = await window.api.notebooksList(rootFolderPath);
     if (res.ok) {
       setNotebooks(res.notebooks);
@@ -19,7 +18,6 @@ export function useNotebooks(rootFolderPath, notify) {
   }, [refreshNotebooks]);
 
   const createNotebook = async (name) => {
-    if (!rootFolderPath) return;
     const res = await window.api.notebooksCreate(rootFolderPath, name);
     if (res.ok) {
       notify('success', `Notebook '${res.name}' created.`);
@@ -31,7 +29,6 @@ export function useNotebooks(rootFolderPath, notify) {
   };
 
   const readNotebook = async (name) => {
-    if (!rootFolderPath) return;
     const res = await window.api.notebooksRead(rootFolderPath, name);
     if (res.ok) {
       setActiveNotebook({ name, content: res.content, modified: false });
@@ -41,7 +38,6 @@ export function useNotebooks(rootFolderPath, notify) {
   };
 
   const writeNotebook = async (name, content) => {
-    if (!rootFolderPath) return;
     const res = await window.api.notebooksWrite(rootFolderPath, name, content);
     if (res.ok) {
       notify('success', `Notebook '${name}' saved.`);
@@ -52,7 +48,6 @@ export function useNotebooks(rootFolderPath, notify) {
   };
 
   const deleteNotebook = async (name) => {
-    if (!rootFolderPath) return;
     const res = await window.api.notebooksDelete(rootFolderPath, name);
     if (res.ok) {
       notify('info', `Notebook '${name}' deleted.`);

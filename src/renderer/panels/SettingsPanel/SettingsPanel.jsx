@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import S from './Panel.module.css'
+import S from '../Panel.module.css'
 
 const FONTS   = ['JetBrains Mono','Fira Code','Cascadia Code','Consolas','Source Code Pro','Monaco','Menlo']
 const ACCENTS = ['#7C3AED','#2563eb','#0891b2','#059669','#d97706','#dc2626','#db2777','#9333ea']
@@ -15,6 +15,7 @@ export default function SettingsPanel({ settings, onUpdate, onClose, notify }) {
     { id:'terminal',  label:'Terminal' },
     { id:'autosave',  label:'Auto Save' },
     { id:'keybinds',  label:'Keybindings' },
+    { id:'ai',        label:'AI Settings' },
   ]
 
   return (
@@ -160,23 +161,66 @@ export default function SettingsPanel({ settings, onUpdate, onClose, notify }) {
               <div className={S.section}>
                 <h3 className={S.sectionTitle}>Keyboard Shortcuts</h3>
                 <div className={S.kbTable}>
-                  {[
-                    ['Run File',            'F5'],
-                    ['Save',                '⌘ S'],
-                    ['Save As',             '⌘ ⇧ S'],
-                    ['Open File',           '⌘ O'],
-                    ['New File',            '⌘ N'],
-                    ['Command Palette',     '⌘ ⇧ P'],
-                    ['Toggle Sidebar',      '⌘ ⇧ E'],
-                    ['Toggle Panel',        '⌘ `'],
-                    ['Close Tab',           'Middle Click'],
-                  ].map(([action, keys]) => (
-                    <div key={action} className={S.kbRow}>
-                      <span className={S.kbAction}>{action}</span>
-                      <kbd className={S.kbKey}>{keys}</kbd>
-                    </div>
-                  ))}
+                  {(() => {
+                    const isMac = typeof navigator !== 'undefined' && navigator.userAgent.includes('Mac');
+                    return [
+                      ['Run File',            'F5'],
+                      ['Save',                isMac ? '⌘ S' : 'Ctrl + S'],
+                      ['Save As',             isMac ? '⌘ ⇧ S' : 'Ctrl + Shift + S'],
+                      ['Open File',           isMac ? '⌘ O' : 'Ctrl + O'],
+                      ['New File',            isMac ? '⌘ N' : 'Ctrl + N'],
+                      ['Command Palette',     isMac ? '⌘ ⇧ P' : 'Ctrl + Shift + P'],
+                      ['Toggle Sidebar',      isMac ? '⌘ ⇧ E' : 'Ctrl + Shift + E'],
+                      ['Toggle Panel',        isMac ? '⌘ `' : 'Ctrl + `'],
+                      ['Toggle Notebooks',    isMac ? '⌘ ⇧ M' : 'Ctrl + Shift + M'],
+                      ['Toggle Settings',     isMac ? '⌘ ,' : 'Ctrl + ,'],
+                      ['Focus Git Sidebar',   isMac ? '⌘ ⇧ G' : 'Ctrl + Shift + G'],
+                      ['Close Tab',           'Middle Click'],
+                    ].map(([action, keys]) => (
+                      <div key={action} className={S.kbRow}>
+                        <span className={S.kbAction}>{action}</span>
+                        <kbd className={S.kbKey}>{keys}</kbd>
+                      </div>
+                    ))
+                  })()}
                 </div>
+              </div>
+            )}
+
+            {tab === 'ai' && (
+              <div className={S.section}>
+                <h3 className={S.sectionTitle}>AI Settings</h3>
+                
+                <Row label="AI Provider" hint="Choose between local Ollama and Google Gemini">
+                  <select value={settings.aiProvider || 'ollama'} onChange={e => set('aiProvider', e.target.value)} className={S.select}>
+                    <option value="ollama">Local Ollama (Offline)</option>
+                    <option value="gemini">Google Gemini (Cloud)</option>
+                  </select>
+                </Row>
+
+                {settings.aiProvider === 'gemini' ? (
+                  <Row label="Gemini API Key" hint="Used if no .env key is found">
+                    <input 
+                      type="password" 
+                      value={settings.geminiApiKey || ''} 
+                      onChange={e => set('geminiApiKey', e.target.value)} 
+                      placeholder="Paste your API key here..." 
+                      className={S.numInput} 
+                      style={{ width: '100%', minWidth: 200 }}
+                    />
+                  </Row>
+                ) : (
+                  <Row label="Ollama Model" hint="Name of the model running locally">
+                    <input 
+                      type="text" 
+                      value={settings.ollamaModel || 'codellama'} 
+                      onChange={e => set('ollamaModel', e.target.value)} 
+                      placeholder="e.g. codellama, llama3, mistral" 
+                      className={S.numInput}
+                      style={{ width: '100%', minWidth: 200 }}
+                    />
+                  </Row>
+                )}
               </div>
             )}
           </div>

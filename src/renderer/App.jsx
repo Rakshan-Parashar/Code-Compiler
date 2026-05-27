@@ -1,17 +1,17 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import TitleBar from "./components/TitleBar.jsx";
-import ActivityBar from "./components/ActivityBar.jsx";
-import Sidebar from "./components/Sidebar.jsx";
-import EditorArea from "./components/EditorArea.jsx";
-import BottomPanel from "./components/BottomPanel.jsx";
-import StatusBar from "./components/StatusBar.jsx";
-import CommandPalette from "./components/CommandPalette.jsx";
-import Notifications from "./components/Notifications.jsx";
-import SettingsPanel from "./panels/SettingsPanel.jsx";
-import AccountPanel from "./panels/AccountPanel.jsx";
-import CloudPanel from "./panels/CloudPanel.jsx";
-import AiPanel from "./panels/AiPanel.jsx";
-import NotebookPanel from "./panels/NotebookPanel.jsx";
+import TitleBar from "./components/TitleBar/TitleBar.jsx";
+import ActivityBar from "./components/ActivityBar/ActivityBar.jsx";
+import Sidebar from "./components/Sidebar/Sidebar.jsx";
+import EditorArea from "./components/EditorArea/EditorArea.jsx";
+import BottomPanel from "./components/BottomPanel/BottomPanel.jsx";
+import StatusBar from "./components/StatusBar/StatusBar.jsx";
+import CommandPalette from "./components/CommandPalette/CommandPalette.jsx";
+import Notifications from "./components/Notifications/Notifications.jsx";
+import SettingsPanel from "./panels/SettingsPanel/SettingsPanel.jsx";
+import AccountPanel from "./panels/AccountPanel/AccountPanel.jsx";
+import CloudPanel from "./panels/CloudPanel/CloudPanel.jsx";
+import AiPanel from "./panels/AiPanel/AiPanel.jsx";
+import NotebookPanel from "./panels/NotebookPanel/NotebookPanel.jsx";
 import { useFiles } from "./hooks/useFiles.js";
 import { useTerminal } from "./hooks/useTerminal.js";
 import { useSettings } from "./hooks/useSettings.js";
@@ -30,6 +30,7 @@ export default function App() {
   const [palOpen, setPalOpen] = useState(false);
   const [activePanel, setActivePanel] = useState("output");
   const [splitMode, setSplitMode] = useState(false);
+  const [gotoLine, setGotoLine] = useState(null);
   const dragging = useRef(false);
 
   const { notify, notifications, dismiss } = useNotifications();
@@ -52,6 +53,7 @@ export default function App() {
     rootFolderPath,
     lintErrors,
     openFile,
+    openFileDiff,
     closeFile,
     setActiveFile,
     setSplitFile,
@@ -92,17 +94,64 @@ export default function App() {
     }
   }, [settings.accentColor]);
 
+  const handleSave = useCallback(async () => {
+    if (settings.formatOnSave) await formatFile();
+    await saveFile();
+    if (settings.liveErrors) runLint(activeFile);
+  }, [saveFile, formatFile, settings, activeFile, runLint]);
+
   const handleRun = useCallback(async () => {
     if (!activeFile) return;
-    clearTerminal();
-    setRunning(true);
-    setActivePanel("output");
+    
+    // Save changes first
+    await handleSave();
+    if (!activeFile.path) {
+      notify("error", "Please save the file first to run it in the terminal.");
+      return;
+    }
+
+    let runCmd = '';
+    const ext = activeFile.ext;
+    const fp = activeFile.path;
+    
+    if (['js', 'jsx', 'ts', 'tsx'].includes(ext)) {
+      runCmd = `node "${fp}"`;
+    } else if (ext === 'py') {
+      runCmd = `python "${fp}"`;
+    } else if (ext === 'rb') {
+      runCmd = `ruby "${fp}"`;
+    } else if (ext === 'php') {
+      runCmd = `php "${fp}"`;
+    } else if (['sh', 'bash'].includes(ext)) {
+      runCmd = `bash "${fp}"`;
+    } else if (ext === 'java') {
+      runCmd = `java "${fp}"`;
+    } else if (ext === 'go') {
+      runCmd = `go run "${fp}"`;
+    } else if (ext === 'c') {
+      const outName = fp.slice(0, fp.lastIndexOf('.'));
+      runCmd = `gcc "${fp}" -o "${outName}" && "${outName}"`;
+    } else if (ext === 'cpp') {
+      const outName = fp.slice(0, fp.lastIndexOf('.'));
+      runCmd = `g++ "${fp}" -o "${outName}" && "${outName}"`;
+    } else if (ext === 'rs') {
+      const outName = fp.slice(0, fp.lastIndexOf('.'));
+      runCmd = `rustc "${fp}" -o "${outName}" && "${outName}"`;
+    } else {
+      notify("error", `Running .${ext} files in terminal is not supported.`);
+      return;
+    }
+
+    // Switch to Terminal Panel
+    setActivePanel("terminal");
     setPanelOpen(true);
-    await window.api.runCode(
-      activeFile.content,
-      EXT_LANG[activeFile.ext] || "plaintext",
-    );
-  }, [activeFile, clearTerminal, setRunning]);
+
+    // Wait a brief moment for the PTY to mount/initialize
+    setTimeout(() => {
+      const ctrlC = '\x03'; // Send Ctrl+C to cancel current line input
+      window.api.ptyWrite(ctrlC + runCmd + '\r');
+    }, 450);
+  }, [activeFile, handleSave, setActivePanel, setPanelOpen, notify]);
 
   const handleStop = useCallback(() => window.api.stopCode(), []);
 
@@ -125,12 +174,6 @@ export default function App() {
     const t = setTimeout(() => handleSave(), settings.autoSaveDelay || 1500);
     return () => clearTimeout(t);
   }, [activeFile?.content, settings.autoSave]);
-
-  const handleSave = useCallback(async () => {
-    if (settings.formatOnSave) await formatFile();
-    await saveFile();
-    if (settings.liveErrors) runLint(activeFile);
-  }, [saveFile, formatFile, settings, activeFile, runLint]);
 
   const onDivider = useCallback(
     (e) => {
@@ -156,23 +199,24 @@ export default function App() {
   useEffect(() => {
     const h = (e) => {
       const m = e.ctrlKey || e.metaKey;
-      if (m && e.key === "s") {
+      const key = e.key.toLowerCase();
+      if (m && key === "s" && !e.shiftKey) {
         e.preventDefault();
         handleSave();
       }
-      if (m && e.shiftKey && e.key === "S") {
+      if (m && e.shiftKey && key === "s") {
         e.preventDefault();
         saveFileAs();
       }
-      if (m && e.key === "o") {
+      if (m && key === "o") {
         e.preventDefault();
         openFileFromDisk();
       }
-      if (m && e.key === "n") {
+      if (m && key === "n") {
         e.preventDefault();
         newFile();
       }
-      if (m && e.shiftKey && e.key === "E") {
+      if (m && e.shiftKey && key === "e") {
         e.preventDefault();
         setSidebarOpen((v) => !v);
       }
@@ -180,21 +224,34 @@ export default function App() {
         e.preventDefault();
         setPanelOpen((v) => !v);
       }
-      if (m && e.shiftKey && e.key === "P") {
+      if (m && e.shiftKey && key === "p") {
         e.preventDefault();
         setPalOpen(true);
       }
-      if (m && e.key === "\\\\") {
+      if (m && e.key === "\\") {
         e.preventDefault();
         setSplitMode((v) => !v);
       }
-      if (m && e.shiftKey && e.key === "F") {
+      if (m && e.shiftKey && key === "f") {
         e.preventDefault();
         formatFile();
       }
-      if (m && e.shiftKey && e.key === "K") {
+      if (m && e.shiftKey && key === "k") {
         e.preventDefault();
         setOverlay("ai");
+      }
+      if (m && key === ",") {
+        e.preventDefault();
+        setOverlay((v) => (v === "settings" ? null : "settings"));
+      }
+      if (m && e.shiftKey && key === "g") {
+        e.preventDefault();
+        setActiveActivity("git");
+        setSidebarOpen(true);
+      }
+      if (m && e.shiftKey && key === "m") {
+        e.preventDefault();
+        setOverlay((v) => (v === "notebooks" ? null : "notebooks"));
       }
       if (e.key === "F5") {
         e.preventDefault();
@@ -218,6 +275,7 @@ export default function App() {
     newFile,
     formatFile,
     handleRun,
+    overlay,
   ]);
 
   const onActivity = (id) => {
@@ -275,6 +333,7 @@ export default function App() {
             openFiles={openFiles}
             activeFile={activeFile}
             onOpenFile={openFile}
+            onOpenFileDiff={openFileDiff}
             onOpenFolder={openFolder}
             onNewFile={newFile}
             onNewFolder={newFolder}
@@ -301,6 +360,7 @@ export default function App() {
             onRun={handleRun}
             onSave={handleSave}
             onSplitSelect={setSplitFile}
+            gotoLine={gotoLine}
           />
           {panelOpen && (
             <>
@@ -370,6 +430,9 @@ export default function App() {
           activeFile={activeFile}
           onClose={() => setOverlay(null)}
           notify={notify}
+          settings={settings}
+          updateSettings={updateSettings}
+          onJumpToLine={(line) => setGotoLine({ line, ts: Date.now() })}
           onInsert={(code) => {
             if (activeFile)
               updateFileContent(
@@ -380,7 +443,18 @@ export default function App() {
         />
       )}
       {overlay === "notebooks" && (
-        <NotebookPanel onClose={() => setOverlay(null)} notify={notify} />
+        <NotebookPanel
+          onClose={() => setOverlay(null)}
+          notify={notify}
+          notebooks={notebooks.notebooks}
+          activeNotebook={notebooks.activeNotebook}
+          createNotebook={notebooks.createNotebook}
+          readNotebook={notebooks.readNotebook}
+          writeNotebook={notebooks.writeNotebook}
+          deleteNotebook={notebooks.deleteNotebook}
+          updateContent={notebooks.updateContent}
+          setActiveNotebook={notebooks.setActiveNotebook}
+        />
       )}
       {palOpen && (
         <CommandPalette

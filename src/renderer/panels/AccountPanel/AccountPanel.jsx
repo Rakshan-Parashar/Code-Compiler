@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import S from './Panel.module.css'
+import S from '../Panel.module.css'
 
 export default function AccountPanel({ onClose, notify, onOpenCloud }) {
   const [account, setAccount] = useState(null)
