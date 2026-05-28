@@ -57,8 +57,7 @@ const THEME = {
 
 export default function EditorArea({ 
   openFiles, activeFile, settings, language, 
-  onSelectTab, onCloseTab, onChangeContent, onRun, onSave, gotoLine,
-  onLocalEdit, onLocalCursor
+  onSelectTab, onCloseTab, onChangeContent, onRun, onSave, gotoLine
 }) {
   const editorRef = useRef(null)
   const monacoRef = useRef(null)
@@ -100,7 +99,6 @@ export default function EditorArea({
     editor.onDidChangeCursorPosition(e => {
       if (activeFile) {
         onChangeContent(activeFile.id, editor.getValue(), { line: e.position.lineNumber, col: e.position.column })
-        onLocalCursor?.({ line: e.position.lineNumber, col: e.position.column })
       }
     })
   }
@@ -109,9 +107,8 @@ export default function EditorArea({
     if (activeFile && val !== undefined) {
       const pos = editorRef.current?.getPosition()
       onChangeContent(activeFile.id, val, pos ? { line: pos.lineNumber, col: pos.column } : undefined)
-      onLocalEdit?.(val)
     }
-  }, [activeFile, onChangeContent, onLocalEdit])
+  }, [activeFile, onChangeContent])
 
   const handleDiffMount = (editor, monaco) => {
     if (!themeSet.current) {
@@ -147,10 +144,31 @@ export default function EditorArea({
 
   useEffect(() => {
     if (editorRef.current && activeFile) {
-      const cur = editorRef.current.getValue()
-      if (cur !== activeFile.content) editorRef.current.setValue(activeFile.content || '')
+      const curVal = editorRef.current.getValue()
+      if (curVal !== activeFile.content) {
+        const pos = editorRef.current.getPosition()
+        const scrollTop = editorRef.current.getScrollTop()
+        
+        const model = editorRef.current.getModel()
+        if (model) {
+          editorRef.current.executeEdits("collaboration", [
+            {
+              range: model.getFullModelRange(),
+              text: activeFile.content || "",
+              forceMoveMarkers: true
+            }
+          ])
+        } else {
+          editorRef.current.setValue(activeFile.content || '')
+        }
+        
+        if (pos) {
+          editorRef.current.setPosition(pos)
+        }
+        editorRef.current.setScrollTop(scrollTop)
+      }
     }
-  }, [activeFile?.id])
+  }, [activeFile?.content])
 
   const opts = {
     fontSize:          settings?.fontSize || 14,
@@ -237,7 +255,7 @@ export default function EditorArea({
                   height="100%"
                   theme="zenith"
                   language={EL[activeFile.ext] || 'plaintext'}
-                  value={activeFile.content || ''}
+                  defaultValue={activeFile.content || ''}
                   onChange={handleChange}
                   onMount={handleMount}
                   options={opts}
@@ -277,7 +295,7 @@ function Welcome() {
         <div className={S.wGrid}>
           <div className={S.wSection}>
             <h3>Runtimes</h3>
-            {[['JS','JavaScript','#f7df1e'],['TS','TypeScript','#3178c6'],['PY','Python 3','#3776ab'],['SH','Bash / Shell','#89e051'],['RB','Ruby','#cc342d'],['PHP','PHP','#7477af']].map(([tag,name,c]) => (
+            {[['JS','JavaScript','#f7df1e'],['TS','TypeScript','#3178c6'],['PY','Python 3','#3776ab'],['SH','Bash / Shell','#89e051'],['RB','Ruby','#cc342d'],['PHP','PHP','#7477af'],['GO','Go','#79d4fd'],['RS','Rust','#dea584'],['C','C','#555555'],['CPP','C++','#f34b7d'],['JV','Java','#f89820']].map(([tag,name,c]) => (
               <div key={tag} className={S.rt}><span className={S.rtTag} style={{ color:c, borderColor:`${c}40` }}>{tag}</span><span>{name}</span></div>
             ))}
           </div>

@@ -1,6 +1,6 @@
 # ⚡ Zenith IDE v3
 
-**Ultimate Hybrid Code Execution Environment** — a full VS Code-style desktop IDE built with Electron, React, Monaco Editor, xterm.js, Vite, and backed by a FastAPI MongoDB/WebSocket server for secure cloud synchronization and real-time collaboration.
+**Ultimate Hybrid Code Execution Environment** — a full VS Code-style desktop IDE built with Electron, React, Monaco Editor, xterm.js, Vite, and backed by a FastAPI SQLite/WebSocket server for secure local database storage and real-time collaboration.
 
 ---
 
@@ -81,13 +81,13 @@ npm run install:native   # rebuilds native module for Electron
 
 ---
 
-### Backend Setup (FastAPI & MongoDB)
+### Backend Setup (FastAPI & SQLite)
 
-The backend powers user authentication, cloud snippet synchronization, and WebSocket-based live collaboration.
+The backend powers user authentication, local snippet synchronization, and WebSocket-based live collaboration.
 
 #### Requirements
 - **Python 3.9+**
-- **MongoDB Atlas Account** (or local MongoDB server)
+- **SQLite** (included in Python standard library)
 
 #### 1. Setup Virtual Environment
 ```bash
@@ -110,8 +110,7 @@ Copy `.env` to the project root and populate it with:
 # Google Gemini API Key
 GEMINI_API_KEY=your_gemini_api_key
 
-# MongoDB Connection String (Atlas SRV supported out-of-the-box)
-MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/zenith_ide
+# SQLite database path is managed automatically
 
 # JWT secret key for session tokens
 JWT_SECRET=your_jwt_secret_key_here
@@ -125,7 +124,7 @@ BACKEND_URL=http://127.0.0.1:8000
 | Feature | Description |
 |---------|-------------|
 | **Live Collaboration** | Real-time WebSocket-based multiplayer code editing & cursor tracking. |
-| **MongoDB Cloud Sync** | Securely register/login to store and sync your snippets and settings in the cloud. |
+| **Local SQLite Sync** | Securely register/login to store and sync your snippets and settings in a local SQLite database. |
 | **Monaco Editor** | VS Code engine — IntelliSense, syntax highlighting, 20+ languages. |
 | **Code Execution** | Run JS, TS, Python, Bash, Ruby, PHP with real-time stdout/stderr. |
 | **xterm.js Terminal** | Full interactive shell (bash/zsh/PowerShell). |
@@ -182,7 +181,7 @@ BACKEND_URL=http://127.0.0.1:8000
 | **React 18** | UI framework |
 | **Monaco Editor** | VS Code editor engine |
 | **FastAPI** | Python microframework for API and WebSocket rooms |
-| **MongoDB Atlas** | Cloud database for authentication & snippet syncing |
+| **SQLite** | Local database for authentication & snippet syncing |
 | **WebSockets** | Real-time bi-directional collaborative communication |
 | **dnspython** | Robust fallback nameserver (Google/Cloudflare) resolution |
 | **passlib & bcrypt** | Cryptographic password hashing and verification |

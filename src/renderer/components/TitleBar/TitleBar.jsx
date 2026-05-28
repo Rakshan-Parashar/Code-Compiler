@@ -1,7 +1,7 @@
 import React,{useState,useRef,useEffect}from'react'
 import S from'./TitleBar.module.css'
 
-export default function TitleBar({activeFile,running,canRun,onRun,onStop,onOpen,onSave,onSaveAs,onOpenFolder,onNewFile,onToggleSidebar,onTogglePanel,onToggleSplit,onZenMode,onPalette,onFormat,onAI,onCollab,collabActive,branch,gitStatus,zenMode,splitMode,errorCount}){
+export default function TitleBar({activeFile,running,canRun,onRun,onStop,onOpen,onSave,onSaveAs,onOpenFolder,onNewFile,onToggleSidebar,onTogglePanel,onToggleSplit,onZenMode,onPalette,onFormat,onAI,onData,branch,gitStatus,zenMode,splitMode,errorCount}){
   return(<header className={S.bar}>
     <div className={S.left}>
       <div className={S.logo}><svg viewBox="0 0 20 20" fill="none" width="13"><polygon points="10,2 18,16 2,16" stroke="#fff" strokeWidth="2" strokeLinejoin="round" fill="rgba(255,255,255,.1)"/><path d="M7 13l3-6 3 6" stroke="rgba(255,255,255,.8)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M8.5 11h3" stroke="rgba(255,255,255,.8)" strokeWidth="1.2" strokeLinecap="round"/></svg></div>
@@ -16,7 +16,7 @@ export default function TitleBar({activeFile,running,canRun,onRun,onStop,onOpen,
     <div className={S.right}>
       {branch&&<div className={S.branch}><svg viewBox="0 0 14 14" width="10" fill="none"><circle cx="4" cy="3" r="1.5" stroke="currentColor" strokeWidth="1.1"/><circle cx="4" cy="11" r="1.5" stroke="currentColor" strokeWidth="1.1"/><circle cx="10" cy="3" r="1.5" stroke="currentColor" strokeWidth="1.1"/><path d="M4 4.5V9.5M5.5 3H8c1 0 1.5.5 1.5 1.5V6" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>{branch}{gitStatus?.length>0&&<span className={S.gitDot}>{gitStatus.length}</span>}</div>}
       <div className={S.toolBtns}>
-        <Tb tip="Live Collaboration" active={collabActive} onClick={onCollab}><svg viewBox="0 0 16 16" width="14" fill="none"><path d="M4 14v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3-3v1M8 7a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg></Tb>
+        <Tb tip="Data Explorer & API Client" onClick={onData}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg></Tb>
         <Tb tip="AI Assistant" onClick={onAI}><svg viewBox="0 0 16 16" width="14" fill="none"><rect x="2" y="2" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.2"/><circle cx="6" cy="8" r="1.2" fill="currentColor"/><circle cx="10" cy="8" r="1.2" fill="currentColor"/><path d="M5 5.5q0-1.5 1.5-2" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/></svg></Tb>
         <Tb tip="Split Editor" active={splitMode} onClick={onToggleSplit}><svg viewBox="0 0 16 16" width="14" fill="none"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.2"/><path d="M8 1v14" stroke="currentColor" strokeWidth="1.2"/></svg></Tb>
         <Tb tip="Format" onClick={onFormat}><svg viewBox="0 0 16 16" width="14" fill="none"><path d="M3 4h10M3 8h6M3 12h8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg></Tb>

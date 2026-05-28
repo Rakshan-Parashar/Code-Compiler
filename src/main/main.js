@@ -358,15 +358,19 @@ ipcMain.handle('git:pull',    (_, cwd) => git('pull', cwd))
 ipcMain.handle('git:discard', (_, { cwd, file }) => git(`checkout -- "${file}"`, cwd))
 ipcMain.handle('git:init',    (_, cwd) => git('init', cwd))
 
-/* execution */
 const RUNNERS = {
-  javascript: { ext: 'js',  cmd: 'node' },
-  typescript: { ext: 'js',  cmd: 'node' },
-  python:     { ext: 'py',  cmd: process.platform === 'win32' ? 'python' : 'python3' },
-  shellscript:{ ext: 'sh',  cmd: 'bash' },
-  bash:       { ext: 'sh',  cmd: 'bash' },
-  ruby:       { ext: 'rb',  cmd: 'ruby' },
-  php:        { ext: 'php', cmd: 'php'  },
+  javascript: { ext: 'js',   cmd: 'node' },
+  typescript: { ext: 'js',   cmd: 'node' },
+  python:     { ext: 'py',   cmd: process.platform === 'win32' ? 'python' : 'python3' },
+  shellscript:{ ext: 'sh',   cmd: 'bash' },
+  bash:       { ext: 'sh',   cmd: 'bash' },
+  ruby:       { ext: 'rb',   cmd: 'ruby' },
+  php:        { ext: 'php',  cmd: 'php'  },
+  go:         { ext: 'go',   cmd: 'go', args: ['run'] },
+  java:       { ext: 'java', cmd: 'java' },
+  rust:       { ext: 'rs',   compile: (tmp, out) => `rustc "${tmp}" -o "${out}"` },
+  c:          { ext: 'c',    compile: (tmp, out) => `gcc "${tmp}" -o "${out}"` },
+  cpp:        { ext: 'cpp',  compile: (tmp, out) => `g++ "${tmp}" -o "${out}"` },
 }
 
 ipcMain.handle('exec:run', async (_, { code, language }) => {
@@ -378,16 +382,46 @@ ipcMain.handle('exec:run', async (_, { code, language }) => {
     return
   }
   return new Promise(resolve => {
-    const tmp = path.join(os.tmpdir(), `zenith_${Date.now()}.${cfg.ext}`)
-    fs.writeFileSync(tmp, code)
     const t0 = Date.now()
+    const tmpDir = os.tmpdir()
+    const baseName = `zenith_${Date.now()}`
+    const tmp = path.join(tmpDir, `${baseName}.${cfg.ext}`)
+    fs.writeFileSync(tmp, code)
+    
     win.webContents.send('exec:out', { t: 'sys', d: `\x1b[2m[${new Date().toLocaleTimeString()}]\x1b[0m \x1b[32m▶\x1b[0m \x1b[1m${language}\x1b[0m\n\n` })
-    runningProcess = spawn(cfg.cmd, [tmp], { shell: process.platform === 'win32', env: { ...process.env } })
+
+    let exePath = tmp
+    let spawnCmd = cfg.cmd
+    let spawnArgs = [...(cfg.args || []), tmp]
+
+    if (cfg.compile) {
+      const outExeName = process.platform === 'win32' ? `${baseName}.exe` : baseName
+      exePath = path.join(tmpDir, outExeName)
+      const compileCmd = cfg.compile(tmp, exePath)
+      try {
+        win.webContents.send('exec:out', { t: 'sys', d: `\x1b[2mCompiling code...\x1b[0m\n` })
+        execSync(compileCmd, { cwd: tmpDir, stdio: 'pipe' })
+        spawnCmd = exePath
+        spawnArgs = []
+      } catch (compileErr) {
+        try { fs.unlinkSync(tmp) } catch {}
+        win.webContents.send('exec:out', { t: 'err', d: `\x1b[31mCompilation Error:\x1b[0m\n${compileErr.stderr?.toString() || compileErr.message}\n` })
+        win.webContents.send('exec:done', { code: 1, ms: 0 })
+        resolve()
+        return
+      }
+    }
+
+    runningProcess = spawn(spawnCmd, spawnArgs, { shell: process.platform === 'win32', env: { ...process.env } })
+    
     runningProcess.stdout.on('data', d => win.webContents.send('exec:out', { t: 'out', d: d.toString() }))
     runningProcess.stderr.on('data', d => win.webContents.send('exec:out', { t: 'err', d: d.toString() }))
     runningProcess.on('close', code => {
       const ms = Date.now() - t0
       try { fs.unlinkSync(tmp) } catch {}
+      if (cfg.compile) {
+        try { fs.unlinkSync(exePath) } catch {}
+      }
       const col = code === 0 ? '\x1b[32m' : '\x1b[31m'
       win.webContents.send('exec:out', { t: 'sys', d: `\n\x1b[2m──────────────────────────────\x1b[0m\n${col}Exit ${code}\x1b[0m \x1b[2m· ${ms}ms\x1b[0m\n` })
       win.webContents.send('exec:done', { code, ms })
@@ -395,6 +429,9 @@ ipcMain.handle('exec:run', async (_, { code, language }) => {
     })
     runningProcess.on('error', err => {
       try { fs.unlinkSync(tmp) } catch {}
+      if (cfg.compile) {
+        try { fs.unlinkSync(exePath) } catch {}
+      }
       win.webContents.send('exec:out', { t: 'err', d: `\x1b[31m✗ ${err.message}\x1b[0m\n` })
       win.webContents.send('exec:done', { code: 1, ms: 0 })
       resolve()

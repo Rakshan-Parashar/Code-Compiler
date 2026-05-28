@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import S from '../Panel.module.css'
+import { ragQueryCodebase } from '../../utils/dataApi.js'
 
-export default function AiPanel({ activeFile, onClose, notify, onInsert, settings, onJumpToLine, updateSettings }) {
+export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, onInsert, settings, onJumpToLine, updateSettings }) {
   const [tab, setTab] = useState('review') // 'chat' or 'review'
   const [hasEnvKey, setHasEnvKey] = useState(false)
   
@@ -13,6 +14,7 @@ export default function AiPanel({ activeFile, onClose, notify, onInsert, setting
 
   // AI Chat State
   const [chatQuery, setChatQuery] = useState('')
+  const [enableRag, setEnableRag] = useState(false)
   const [chatHistory, setChatHistory] = useState([
     { role: 'assistant', content: 'Hello! I am your AI Coding Assistant. Ask me to write, explain, or optimize code for you.' }
   ])
@@ -77,10 +79,37 @@ export default function AiPanel({ activeFile, onClose, notify, onInsert, setting
     setChatLoading(true)
 
     try {
-      // Include active file context if available
       let prompt = userMsg
-      if (activeFile) {
+      let sources = []
+
+      if (enableRag && rootFolderPath) {
+        setChatHistory(prev => [...prev, { role: 'assistant', content: '🔍 Querying codebase context (RAG)...' }])
+        
+        const ragRes = await ragQueryCodebase(
+          userMsg,
+          rootFolderPath,
+          settings.aiProvider || 'ollama',
+          settings.geminiApiKey || '',
+          settings.ollamaModel || 'codellama'
+        )
+
+        // Remove the searching message
+        setChatHistory(prev => prev.slice(0, -1))
+
+        if (ragRes.ok && ragRes.snippets && ragRes.snippets.length > 0) {
+          let contextStr = "Here is the relevant codebase context retrieved from the workspace:\n\n"
+          ragRes.snippets.forEach(snippet => {
+            contextStr += `=== File: ${snippet.path} (Lines ${snippet.start_line}-${snippet.end_line}) ===\n${snippet.text}\n\n`
+            sources.push(`${snippet.path} (L${snippet.start_line}-${snippet.end_line})`)
+          })
+          
+          prompt = `You are an expert developer assistant. ${contextStr}Based on the above codebase context, answer the user's question. If the context does not contain the answer, use your general knowledge but mention it is not in the context.\n\nUser Question:\n${userMsg}`
+        } else {
+          prompt = `You are an expert developer assistant. Note: No specific context was found in the workspace for this query. Answer based on your general knowledge.\n\nUser Question:\n${userMsg}`
+        }
+      } else if (activeFile) {
         prompt = `You are an expert developer assistant. Here is the active file context:\n\nLanguage: ${activeFile.ext}\nPath: ${activeFile.path || 'untitled'}\nCode:\n\`\`\`\n${activeFile.content}\n\`\`\`\n\nUser Question:\n${userMsg}`
+        sources.push(`${activeFile.name} (Active File)`)
       }
 
       const res = await window.api.aiChat(
@@ -91,7 +120,7 @@ export default function AiPanel({ activeFile, onClose, notify, onInsert, setting
       )
       
       if (res.ok) {
-        setChatHistory(prev => [...prev, { role: 'assistant', content: res.response }])
+        setChatHistory(prev => [...prev, { role: 'assistant', content: res.response, sources }])
       } else if (res.canceled) {
         notify?.('info', 'Chat request canceled')
       } else {
@@ -451,6 +480,16 @@ export default function AiPanel({ activeFile, onClose, notify, onInsert, setting
                     }}
                   >
                     {msg.content}
+                    {msg.sources && msg.sources.length > 0 && (
+                      <div style={{ fontSize: '11px', color: '#8c8c9e', marginTop: '8px', borderTop: '1px solid #1c1c24', paddingTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                        <span style={{ fontWeight: 'bold' }}>Context Sources:</span>
+                        {msg.sources.map((src, sidx) => (
+                          <span key={sidx} style={{ background: '#1c1c24', color: 'var(--acl)', padding: '1px 5px', borderRadius: '3px', fontFamily: 'monospace', border: '1px solid #2d2d3d' }}>
+                            {src}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
                 {chatLoading && (
@@ -459,6 +498,22 @@ export default function AiPanel({ activeFile, onClose, notify, onInsert, setting
                   </div>
                 )}
                 <div ref={chatEndRef} />
+              </div>
+
+              {/* RAG Toggle Toolbar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', padding: '6px 10px', background: '#121218', borderRadius: '4px', border: '1px solid #1c1c24', alignSelf: 'stretch' }}>
+                <input 
+                  type="checkbox" 
+                  id="enable-rag"
+                  checked={enableRag} 
+                  onChange={e => setEnableRag(e.target.checked)}
+                  style={{ cursor: 'pointer' }}
+                  disabled={!rootFolderPath}
+                />
+                <label htmlFor="enable-rag" style={{ fontSize: '12px', color: rootFolderPath ? '#fff' : '#5a5a6e', cursor: rootFolderPath ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: '4px', userSelect: 'none' }}>
+                  🔍 <strong>Codebase RAG</strong> (Search entire workspace)
+                  {!rootFolderPath && <span style={{ fontSize: '10px', color: '#8c8c9e', fontStyle: 'italic' }}>(Open a folder first)</span>}
+                </label>
               </div>
 
               {/* Chat Input */}

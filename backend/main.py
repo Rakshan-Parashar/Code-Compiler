@@ -5,20 +5,19 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Depends, HTTPException, status, Security, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Depends, HTTPException, status, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr, Field
+import requests
 
-from backend.config import MONGODB_URI, JWT_SECRET, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, logger
+from backend.config import JWT_SECRET, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, logger
 from backend.db_manager import DatabaseManager
 from backend.auth_manager import AuthManager
-from backend.collab_manager import CollaborationManager
 
 # Initialize Managers
-db_manager = DatabaseManager(MONGODB_URI)
+db_manager = DatabaseManager()
 auth_manager = AuthManager(JWT_SECRET, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES)
-collab_manager = CollaborationManager()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -97,6 +96,35 @@ class SnippetSchema(BaseModel):
     description: Optional[str] = ""
     language: str
     code: str
+
+class DbQuerySchema(BaseModel):
+    db_name: str
+    collection_name: str
+    query: Optional[dict] = Field(default_factory=dict)
+    limit: Optional[int] = 50
+    skip: Optional[int] = 0
+
+class DbCreateSchema(BaseModel):
+    db_name: str
+    collection_name: str
+    document: dict
+
+class DbUpdateSchema(BaseModel):
+    db_name: str
+    collection_name: str
+    doc_id: str
+    document: dict
+
+class DbDeleteSchema(BaseModel):
+    db_name: str
+    collection_name: str
+    doc_id: str
+
+class ProxyRequestSchema(BaseModel):
+    url: str
+    method: str = "GET"
+    headers: Optional[dict] = Field(default_factory=dict)
+    body: Optional[str] = ""
 
 # --- API Endpoints ---
 
@@ -238,49 +266,198 @@ def delete_snippet(
     updated_list = get_user_snippets(current_user["email"], database)
     return {"ok": True, "list": updated_list}
 
-# --- WebSocket Collaboration Endpoint ---
+# --- MongoDB Explorer Endpoints ---
 
-@app.websocket("/api/collaboration/{room_id}/{username}")
-async def websocket_collaboration(websocket: WebSocket, room_id: str, username: str):
-    """Real-time collaboration endpoint."""
-    active_users = await collab_manager.connect(room_id, username, websocket)
-    
-    # Broadcast updated user list to everyone in the room
-    await collab_manager.broadcast(room_id, {
-        "type": "users",
-        "users": active_users
-    })
-    
+@app.get("/api/db/databases")
+def get_databases():
+    """Retrieves only the active database to prevent cross-db leaks."""
+    active_db = db_manager.get_db()
+    db_name = active_db.name if active_db else "zenith_ide"
+    return {"databases": [db_name]}
+
+@app.get("/api/db/collections/{db_name}")
+def get_collections(db_name: str):
+    """Retrieves collections for the database, excluding sensitive user collections."""
+    active_db = db_manager.get_db()
+    active_name = active_db.name if active_db else "zenith_ide"
+    if db_name != active_name:
+        raise HTTPException(status_code=403, detail="Access to this database is restricted.")
+        
+    all_cols = db_manager.list_collections(db_name)
+    # Hide users collection to prevent exposing user identities and hashes
+    filtered_cols = [c for c in all_cols if c != "users"]
+    return {"collections": filtered_cols}
+
+@app.post("/api/db/documents")
+def get_documents(payload: DbQuerySchema):
+    """Queries documents in a collection, validating collection permissions."""
+    active_db = db_manager.get_db()
+    active_name = active_db.name if active_db else "zenith_ide"
+    if payload.db_name != active_name:
+        raise HTTPException(status_code=403, detail="Access to this database is restricted.")
+    if payload.collection_name == "users":
+        raise HTTPException(status_code=403, detail="Access to the 'users' collection is restricted.")
+        
     try:
-        while True:
-            # Wait for messages from this client
-            data = await websocket.receive_json()
-            msg_type = data.get("type")
+        docs = db_manager.query_documents(
+            payload.db_name,
+            payload.collection_name,
+            payload.query,
+            payload.limit,
+            payload.skip
+        )
+        return {"ok": True, "documents": docs}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/db/documents/create")
+def create_document(payload: DbCreateSchema):
+    """Inserts a new document, validating collection permissions."""
+    active_db = db_manager.get_db()
+    active_name = active_db.name if active_db else "zenith_ide"
+    if payload.db_name != active_name:
+        raise HTTPException(status_code=403, detail="Access to this database is restricted.")
+    if payload.collection_name == "users":
+        raise HTTPException(status_code=403, detail="Access to the 'users' collection is restricted.")
+        
+    try:
+        res = db_manager.insert_document(
+            payload.db_name,
+            payload.collection_name,
+            payload.document
+        )
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.put("/api/db/documents/update")
+def update_document(payload: DbUpdateSchema):
+    """Updates an existing document, validating collection permissions."""
+    active_db = db_manager.get_db()
+    active_name = active_db.name if active_db else "zenith_ide"
+    if payload.db_name != active_name:
+        raise HTTPException(status_code=403, detail="Access to this database is restricted.")
+    if payload.collection_name == "users":
+        raise HTTPException(status_code=403, detail="Access to the 'users' collection is restricted.")
+        
+    try:
+        res = db_manager.update_document(
+            payload.db_name,
+            payload.collection_name,
+            payload.doc_id,
+            payload.document
+        )
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/db/documents/delete")
+def delete_document(payload: DbDeleteSchema):
+    """Deletes a document, validating collection permissions."""
+    active_db = db_manager.get_db()
+    active_name = active_db.name if active_db else "zenith_ide"
+    if payload.db_name != active_name:
+        raise HTTPException(status_code=403, detail="Access to this database is restricted.")
+    if payload.collection_name == "users":
+        raise HTTPException(status_code=403, detail="Access to the 'users' collection is restricted.")
+        
+    try:
+        res = db_manager.delete_document(
+            payload.db_name,
+            payload.collection_name,
+            payload.doc_id
+        )
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# --- API Proxy Endpoint ---
+
+@app.post("/api/proxy/request")
+def proxy_request(payload: ProxyRequestSchema):
+    """
+    Sends an HTTP request from the backend to bypass browser CORS restrictions.
+    """
+    start_time = time.time()
+    try:
+        method = payload.method.upper()
+        # Clean headers: remove Host to prevent issues with backend proxying
+        headers = {k: v for k, v in (payload.headers or {}).items() if k.lower() != 'host'}
+        
+        # Make the request
+        resp = requests.request(
+            method=method,
+            url=payload.url,
+            headers=headers,
+            data=payload.body.encode('utf-8') if payload.body else None,
+            timeout=10.0
+        )
+        
+        duration = int((time.time() - start_time) * 1000)
+        
+        # Try to parse response body as JSON, fallback to text
+        try:
+            body_content = resp.json()
+        except ValueError:
+            body_content = resp.text
             
-            if msg_type == "edit":
-                await collab_manager.broadcast(
-                    room_id,
-                    {
-                        "type": "edit",
-                        "content": data.get("content"),
-                        "username": username
-                    },
-                    exclude_user=username
-                )
-            elif msg_type == "cursor":
-                await collab_manager.broadcast(
-                    room_id,
-                    {
-                        "type": "cursor",
-                        "position": data.get("position"),
-                        "username": username
-                    },
-                    exclude_user=username
-                )
-    except WebSocketDisconnect:
-        active_users = collab_manager.disconnect(room_id, username)
-        # Broadcast updated user list
-        await collab_manager.broadcast(room_id, {
-            "type": "users",
-            "users": active_users
-        })
+        return {
+            "ok": True,
+            "status": resp.status_code,
+            "status_text": resp.reason,
+            "headers": dict(resp.headers),
+            "body": body_content,
+            "time_ms": duration,
+            "size_bytes": len(resp.content)
+        }
+    except Exception as e:
+        duration = int((time.time() - start_time) * 1000)
+        return {
+            "ok": False,
+            "error": str(e),
+            "status": 0,
+            "time_ms": duration
+        }
+
+
+# --- RAG Endpoint ---
+
+class RagQuerySchema(BaseModel):
+    query: str
+    root_path: str
+    provider: Optional[str] = "gemini"
+    api_key: Optional[str] = None
+    model: Optional[str] = None
+    max_results: Optional[int] = 5
+
+@app.post("/api/ai/rag/query")
+def rag_query(payload: RagQuerySchema):
+    """
+    Retrieves relevant code blocks from the workspace for RAG.
+    Performs query expansion via the LLM, then searches code-blocks.
+    """
+    from backend.rag_manager import RAGManager, expand_query
+    try:
+        # 1. Expand query to keywords using LLM
+        keywords = expand_query(
+            payload.query, 
+            payload.provider, 
+            payload.api_key, 
+            payload.model
+        )
+        
+        # 2. Search workspace
+        snippets = RAGManager.search_workspace(
+            payload.root_path, 
+            keywords, 
+            payload.max_results
+        )
+        
+        return {
+            "ok": True,
+            "keywords": keywords,
+            "snippets": snippets
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+

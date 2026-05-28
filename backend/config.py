@@ -17,5 +17,5 @@ JWT_SECRET = os.getenv("JWT_SECRET", "super-secret-zenith-ide-key-change-in-prod
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
-# MongoDB URI
-MONGODB_URI = os.getenv("MONGODB_URI")
+# SQLite Database path (located in the project root)
+SQLITE_DB_PATH = os.path.join(project_root, "db.sqlite3")
