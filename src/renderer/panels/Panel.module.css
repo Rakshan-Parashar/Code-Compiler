@@ -132,3 +132,8 @@
 .codeBlock    { font-family:var(--fmono); font-size:12px; background:var(--bg0); border:1px solid var(--b1); border-radius:8px; padding:14px; white-space:pre-wrap; overflow-x:auto; color:var(--t1); line-height:1.6; max-height:360px; overflow-y:auto; }
 .badge        { background:var(--acd); color:var(--acl); border-radius:10px; padding:1px 8px; font-size:11px; font-weight:600; }
 .truncate     { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:260px; }
+
+.googleBtn    { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:9px 12px; border-radius:8px; font-size:13px; font-weight:500; background:var(--bg3); border:1px solid var(--b2); color:var(--t1); cursor:pointer; transition:background .15s, border-color .15s; margin-top:8px; }
+.googleBtn:hover { background:var(--bg4); border-color:var(--b3); }
+.googleBtn:disabled { opacity:.6; cursor:not-allowed; }
+

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import S from '../Panel.module.css'
+import { isFirebaseEnabled, fbListSnippets, fbSaveSnippet, fbDeleteSnippet } from '../../utils/firebase.js'
 
 const LANG_LABELS = { javascript:'JS', typescript:'TS', python:'PY', html:'HTML', css:'CSS', json:'JSON', bash:'SH', default:'TXT' }
 
@@ -10,25 +11,97 @@ export default function CloudPanel({ activeFile, onClose, notify, onOpenFile }) 
   const [form, setForm]         = useState({ name:'', description:'', language:'javascript', code:'' })
   const [loading, setLoading]   = useState(true)
   const [search, setSearch]     = useState('')
+  const [account, setAccount]   = useState(null)
 
   useEffect(() => {
-    window.api?.cloudList().then(list => { setSnippets(list || []); setLoading(false) })
+    const initCloud = async () => {
+      setLoading(true)
+      let acc = null
+      if (window.api) {
+        acc = await window.api.loadAccount()
+        setAccount(acc)
+      }
+      
+      if (isFirebaseEnabled) {
+        if (acc?.email) {
+          try {
+            const list = await fbListSnippets(acc.email)
+            setSnippets(list || [])
+          } catch (e) {
+            console.error(e)
+            notify?.('error', e.message || 'Failed to fetch cloud snippets')
+          }
+        } else {
+          setSnippets([])
+        }
+        setLoading(false)
+      } else {
+        window.api?.cloudList().then(list => {
+          setSnippets(list || [])
+          setLoading(false)
+        })
+      }
+    }
+    initCloud()
   }, [])
 
   const save = async () => {
     if (!form.name.trim()) { notify?.('error', 'Snippet name required'); return }
-    const res = await window.api?.cloudSave(editing ? { ...editing, ...form } : form)
-    if (res?.ok) {
-      setSnippets(res.list)
-      notify?.('success', editing ? 'Snippet updated' : 'Snippet saved to cloud ☁')
-      setEditing(false); setForm({ name:'', description:'', language:'javascript', code:'' })
+    
+    if (isFirebaseEnabled) {
+      if (!account?.email) { notify?.('error', 'You must be signed in to save snippets'); return }
+      setLoading(true)
+      try {
+        const snippetData = editing ? { ...editing, ...form } : form
+        const saved = await fbSaveSnippet(snippetData, account.email)
+        setSnippets(prev => {
+          const idx = prev.findIndex(x => x.id === saved.id)
+          const next = [...prev]
+          if (idx >= 0) next[idx] = saved
+          else next.unshift(saved)
+          return next
+        })
+        notify?.('success', editing ? 'Snippet updated' : 'Snippet saved to cloud ☁')
+        setEditing(false); setForm({ name:'', description:'', language:'javascript', code:'' })
+      } catch (e) {
+        notify?.('error', e.message || 'Failed to save to Firebase')
+      } finally {
+        setLoading(false)
+      }
+    } else {
+      const res = await window.api?.cloudSave(editing ? { ...editing, ...form } : form)
+      if (res?.ok) {
+        setSnippets(res.list)
+        notify?.('success', editing ? 'Snippet updated' : 'Snippet saved to cloud ☁')
+        setEditing(false); setForm({ name:'', description:'', language:'javascript', code:'' })
+      }
     }
   }
 
   const del = async (id) => {
     if (!window.confirm('Delete this snippet?')) return
-    const res = await window.api?.cloudDelete(id)
-    if (res?.ok) { setSnippets(res.list); if (selected?.id === id) setSelected(null); notify?.('info', 'Snippet deleted') }
+    
+    if (isFirebaseEnabled) {
+      if (!account?.email) { notify?.('error', 'You must be signed in to delete snippets'); return }
+      setLoading(true)
+      try {
+        await fbDeleteSnippet(id)
+        setSnippets(prev => prev.filter(s => s.id !== id))
+        if (selected?.id === id) setSelected(null)
+        notify?.('info', 'Snippet deleted')
+      } catch (e) {
+        notify?.('error', e.message || 'Failed to delete from Firebase')
+      } finally {
+        setLoading(false)
+      }
+    } else {
+      const res = await window.api?.cloudDelete(id)
+      if (res?.ok) { 
+        setSnippets(res.list)
+        if (selected?.id === id) setSelected(null)
+        notify?.('info', 'Snippet deleted') 
+      }
+    }
   }
 
   const startEdit = (snip) => {
@@ -38,8 +111,29 @@ export default function CloudPanel({ activeFile, onClose, notify, onOpenFile }) 
   const saveCurrentFile = async () => {
     if (!activeFile) { notify?.('error', 'No file open'); return }
     const f = { name: activeFile.name, description: `Saved from ${activeFile.name}`, language: activeFile.ext === 'py' ? 'python' : activeFile.ext === 'ts' ? 'typescript' : 'javascript', code: activeFile.content }
-    const res = await window.api?.cloudSave(f)
-    if (res?.ok) { setSnippets(res.list); notify?.('success', `${activeFile.name} saved to cloud ☁`) }
+    
+    if (isFirebaseEnabled) {
+      if (!account?.email) { notify?.('error', 'You must be signed in to save snippets'); return }
+      setLoading(true)
+      try {
+        const saved = await fbSaveSnippet(f, account.email)
+        setSnippets(prev => {
+          const idx = prev.findIndex(x => x.id === saved.id)
+          const next = [...prev]
+          if (idx >= 0) next[idx] = saved
+          else next.unshift(saved)
+          return next
+        })
+        notify?.('success', `${activeFile.name} saved to cloud ☁`)
+      } catch (e) {
+        notify?.('error', e.message || 'Failed to save snippet to Firebase')
+      } finally {
+        setLoading(false)
+      }
+    } else {
+      const res = await window.api?.cloudSave(f)
+      if (res?.ok) { setSnippets(res.list); notify?.('success', `${activeFile.name} saved to cloud ☁`) }
+    }
   }
 
   const filtered = snippets.filter(s =>
@@ -129,55 +223,65 @@ export default function CloudPanel({ activeFile, onClose, notify, onOpenFile }) 
           <div className={S.hdrLeft}>
             <svg viewBox="0 0 16 16" fill="none" width="15"><path d="M3 9a4 4 0 010-8 4 4 0 017.5-1.5A3.5 3.5 0 0112.5 7H3z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M7 11v3.5M5 13l2-2 2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             <span>Cloud Snippets</span>
-            <span className={S.badge}>{snippets.length}</span>
+            {(!isFirebaseEnabled || account) && <span className={S.badge}>{snippets.length}</span>}
           </div>
           <button className={S.closeBtn} onClick={onClose}>×</button>
         </div>
 
         <div className={S.bodyPad}>
-          <div className={S.cloudTop}>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search snippets…" className={S.searchInput} />
-            <div style={{ display:'flex', gap:6 }}>
-              {activeFile && (
-                <button className={S.saveCurrentBtn} onClick={saveCurrentFile} title={`Save ${activeFile.name} to cloud`}>
-                  ☁ Save Current File
-                </button>
-              )}
-              <button className={S.newSnipBtn} onClick={() => setEditing({})}>+ New Snippet</button>
-            </div>
-          </div>
-
-          {loading && <div className={S.cloudLoading}>Loading snippets…</div>}
-
-          {!loading && !filtered.length && (
+          {isFirebaseEnabled && !account && !loading ? (
             <div className={S.cloudEmpty}>
-              <span style={{ fontSize:36 }}>☁</span>
-              <p>{search ? 'No snippets match your search' : 'No cloud snippets yet'}</p>
-              <span>{search ? '' : 'Save code snippets to access them anywhere'}</span>
-              {!search && <button className={S.newSnipBtn} onClick={() => setEditing({})}>+ Add First Snippet</button>}
+              <span style={{ fontSize:48 }}>☁</span>
+              <p>Sign In Required</p>
+              <span>Please sign in or create an account via the Account panel to synchronize your snippets with Google Firebase cloud.</span>
             </div>
-          )}
-
-          <div className={S.snipList}>
-            {filtered.map(snip => (
-              <div key={snip.id} className={S.snipCard} onClick={() => setSelected(snip)}>
-                <div className={S.snipTop}>
-                  <span className={S.snipName}>{snip.name}</span>
-                  <span className={S.langTag}>{LANG_LABELS[snip.language] || 'TXT'}</span>
-                </div>
-                {snip.description && <div className={S.snipDesc}>{snip.description}</div>}
-                <pre className={S.snipPreview}>{(snip.code || '').split('\n').slice(0,3).join('\n')}</pre>
-                <div className={S.snipFooter}>
-                  <span>{new Date(snip.updatedAt).toLocaleDateString()}</span>
-                  <div className={S.snipActions}>
-                    <button className={S.snipBtn} onClick={e => { e.stopPropagation(); navigator.clipboard?.writeText(snip.code); notify?.('success','Copied') }}>Copy</button>
-                    <button className={S.snipBtn} onClick={e => { e.stopPropagation(); startEdit(snip) }}>Edit</button>
-                    <button className={`${S.snipBtn} ${S.snipDel}`} onClick={e => { e.stopPropagation(); del(snip.id) }}>Delete</button>
-                  </div>
+          ) : (
+            <>
+              <div className={S.cloudTop}>
+                <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search snippets…" className={S.searchInput} />
+                <div style={{ display:'flex', gap:6 }}>
+                  {activeFile && (
+                    <button className={S.saveCurrentBtn} onClick={saveCurrentFile} title={`Save ${activeFile.name} to cloud`}>
+                      ☁ Save Current File
+                    </button>
+                  )}
+                  <button className={S.newSnipBtn} onClick={() => setEditing({})}>+ New Snippet</button>
                 </div>
               </div>
-            ))}
-          </div>
+
+              {loading && <div className={S.cloudLoading}>Loading snippets…</div>}
+
+              {!loading && !filtered.length && (
+                <div className={S.cloudEmpty}>
+                  <span style={{ fontSize:36 }}>☁</span>
+                  <p>{search ? 'No snippets match your search' : 'No cloud snippets yet'}</p>
+                  <span>{search ? '' : 'Save code snippets to access them anywhere'}</span>
+                  {!search && <button className={S.newSnipBtn} onClick={() => setEditing({})}>+ Add First Snippet</button>}
+                </div>
+              )}
+
+              <div className={S.snipList}>
+                {filtered.map(snip => (
+                  <div key={snip.id} className={S.snipCard} onClick={() => setSelected(snip)}>
+                    <div className={S.snipTop}>
+                      <span className={S.snipName}>{snip.name}</span>
+                      <span className={S.langTag}>{LANG_LABELS[snip.language] || 'TXT'}</span>
+                    </div>
+                    {snip.description && <div className={S.snipDesc}>{snip.description}</div>}
+                    <pre className={S.snipPreview}>{(snip.code || '').split('\n').slice(0,3).join('\n')}</pre>
+                    <div className={S.snipFooter}>
+                      <span>{new Date(snip.updatedAt).toLocaleDateString()}</span>
+                      <div className={S.snipActions}>
+                        <button className={S.snipBtn} onClick={e => { e.stopPropagation(); navigator.clipboard?.writeText(snip.code); notify?.('success','Copied') }}>Copy</button>
+                        <button className={S.snipBtn} onClick={e => { e.stopPropagation(); startEdit(snip) }}>Edit</button>
+                        <button className={`${S.snipBtn} ${S.snipDel}`} onClick={e => { e.stopPropagation(); del(snip.id) }}>Delete</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

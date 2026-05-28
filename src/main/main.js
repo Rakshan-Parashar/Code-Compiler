@@ -54,6 +54,26 @@ function createWindow() {
       contextIsolation: true, nodeIntegration: false, sandbox: false,
     },
   })
+
+  win.webContents.setWindowOpenHandler((details) => {
+    if (
+      details.url.startsWith('https://accounts.google.com') ||
+      details.url.includes('firebaseapp.com') ||
+      details.url.includes('google.com')
+    ) {
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          autoHideMenuBar: true,
+          webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+          }
+        }
+      }
+    }
+    return { action: 'deny' }
+  })
   if (isDev) {
     win.loadURL('http://localhost:5174')
     // Force DevTools to start closed on launch
