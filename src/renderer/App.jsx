@@ -118,6 +118,7 @@ export default function App() {
     let runCmd = '';
     const ext = activeFile.ext;
     const fp = activeFile.path;
+    const isWin = navigator.userAgent.includes('Windows') || navigator.platform.includes('Win');
     
     if (['js', 'jsx', 'ts', 'tsx'].includes(ext)) {
       runCmd = `node "${fp}"`;
@@ -135,13 +136,19 @@ export default function App() {
       runCmd = `go run "${fp}"`;
     } else if (ext === 'c') {
       const outName = fp.slice(0, fp.lastIndexOf('.'));
-      runCmd = `gcc "${fp}" -o "${outName}" && "${outName}"`;
+      runCmd = isWin 
+        ? `gcc "${fp}" -o "${outName}"; if ($?) { & "${outName}" }` 
+        : `gcc "${fp}" -o "${outName}" && "${outName}"`;
     } else if (ext === 'cpp') {
       const outName = fp.slice(0, fp.lastIndexOf('.'));
-      runCmd = `g++ "${fp}" -o "${outName}" && "${outName}"`;
+      runCmd = isWin 
+        ? `g++ "${fp}" -o "${outName}"; if ($?) { & "${outName}" }` 
+        : `g++ "${fp}" -o "${outName}" && "${outName}"`;
     } else if (ext === 'rs') {
       const outName = fp.slice(0, fp.lastIndexOf('.'));
-      runCmd = `rustc "${fp}" -o "${outName}" && "${outName}"`;
+      runCmd = isWin 
+        ? `rustc "${fp}" -o "${outName}"; if ($?) { & "${outName}" }` 
+        : `rustc "${fp}" -o "${outName}" && "${outName}"`;
     } else {
       notify("error", `Running .${ext} files in terminal is not supported.`);
       return;

@@ -1,21 +1,22 @@
 import { initializeApp } from 'firebase/app';
-import { 
-  getAuth, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
   updateProfile,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  deleteUser
 } from 'firebase/auth';
-import { 
-  getFirestore, 
-  collection, 
-  doc, 
-  setDoc, 
-  getDocs, 
-  query, 
-  where, 
+import {
+  getFirestore,
+  collection,
+  doc,
+  setDoc,
+  getDocs,
+  query,
+  where,
   deleteDoc
 } from 'firebase/firestore';
 
@@ -30,7 +31,7 @@ const firebaseConfig = {
 
 // Toggle Firebase features dynamically based on environment keys
 export const isFirebaseEnabled = !!(
-  firebaseConfig.apiKey && 
+  firebaseConfig.apiKey &&
   firebaseConfig.projectId
 );
 
@@ -55,7 +56,7 @@ export async function fbSignup(name, email, password) {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
   await updateProfile(user, { displayName: name });
-  
+
   return {
     name: name,
     email: user.email,
@@ -69,7 +70,7 @@ export async function fbLogin(email, password) {
   if (!auth) throw new Error("Firebase SDK not initialized. Verify .env credentials.");
   const userCredential = await signInWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
-  
+
   return {
     name: user.displayName || user.email.split('@')[0],
     email: user.email,
@@ -85,7 +86,7 @@ export async function fbLoginWithGoogle() {
   provider.setCustomParameters({ prompt: 'select_account' });
   const userCredential = await signInWithPopup(auth, provider);
   const user = userCredential.user;
-  
+
   return {
     name: user.displayName || user.email.split('@')[0],
     email: user.email,
@@ -101,12 +102,35 @@ export async function fbLogout() {
   }
 }
 
+export async function fbDeleteAccount() {
+  if (!auth) throw new Error("Firebase SDK not initialized. Verify .env credentials.");
+  const user = auth.currentUser;
+  if (!user) throw new Error("No authenticated user session found.");
+
+  if (db) {
+    try {
+      const colRef = collection(db, 'snippets');
+      const q = query(colRef, where('userId', '==', user.email));
+      const snap = await getDocs(q);
+      const deletePromises = [];
+      snap.forEach(docSnap => {
+        deletePromises.push(deleteDoc(docSnap.ref));
+      });
+      await Promise.all(deletePromises);
+    } catch (e) {
+      console.error("Failed to delete user snippets from Firestore:", e);
+    }
+  }
+
+  await deleteUser(user);
+}
+
 export async function fbSaveSnippet(snippet, userEmail) {
   if (!db) throw new Error("Firestore SDK not initialized. Verify .env credentials.");
   const t = Date.now();
   const id = snippet.id || `snip_${Date.now()}`;
   const docRef = doc(db, 'snippets', id);
-  
+
   const payload = {
     id,
     userId: userEmail,
@@ -117,7 +141,7 @@ export async function fbSaveSnippet(snippet, userEmail) {
     createdAt: snippet.createdAt || t,
     updatedAt: t
   };
-  
+
   await setDoc(docRef, payload);
   return payload;
 }

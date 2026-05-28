@@ -195,6 +195,13 @@ def login(user_in: UserLogin, database = Depends(get_db)):
         }
     }
 
+@app.delete("/api/auth/delete")
+def delete_account(current_user = Depends(get_current_user), database = Depends(get_db)):
+    """Deletes the authenticated user account and all their snippets from local database."""
+    database.snippets.delete_many({"userId": current_user["email"]})
+    database.users.delete_one({"email": current_user["email"]})
+    return {"ok": True, "message": "Account and snippets deleted successfully."}
+
 @app.get("/api/snippets")
 def list_snippets(current_user = Depends(get_current_user), database = Depends(get_db)):
     """Lists all cloud snippets belonging to the authenticated user."""

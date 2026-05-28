@@ -175,6 +175,24 @@ class SQLiteCollection:
         finally:
             conn.close()
 
+    def delete_many(self, filter_query: dict):
+        conn = self.conn_func()
+        cursor = conn.cursor()
+        try:
+            docs = self.find(filter_query)
+            deleted_count = 0
+            for doc in docs:
+                key_val = doc.get(self.key_field)
+                cursor.execute(
+                    f"DELETE FROM {self.table_name} WHERE {self.key_field} = ?",
+                    (str(key_val),)
+                )
+                deleted_count += 1
+            conn.commit()
+            return DeleteResult(deleted_count)
+        finally:
+            conn.close()
+
     def create_index(self, name_or_keys, unique=False):
         pass
 

@@ -206,8 +206,19 @@ export default function CloudPanel({ activeFile, onClose, notify, onOpenFile }) 
             <button className={S.resetBtn} onClick={() => del(selected.id)}>Delete</button>
             <div style={{ display:'flex', gap:8 }}>
               <button className={S.resetBtn} onClick={() => startEdit(selected)}>Edit</button>
-              <button className={S.saveBtn} onClick={() => { navigator.clipboard?.writeText(selected.code); notify?.('success','Copied to clipboard') }}>
-                Copy Code
+              <button className={S.saveBtn} onClick={() => { 
+                const ext = selected.language === 'python' ? 'py' : selected.language === 'typescript' ? 'ts' : selected.language === 'javascript' ? 'js' : selected.language === 'html' ? 'html' : selected.language === 'css' ? 'css' : selected.language === 'json' ? 'json' : selected.language === 'bash' ? 'sh' : 'txt';
+                onOpenFile?.({
+                  name: selected.name.includes('.') ? selected.name : `${selected.name}.${ext}`,
+                  content: selected.code,
+                  ext
+                });
+                onClose();
+              }}>
+                Open in Editor
+              </button>
+              <button className={S.resetBtn} onClick={() => { navigator.clipboard?.writeText(selected.code); notify?.('success','Copied to clipboard') }}>
+                Copy
               </button>
             </div>
           </div>

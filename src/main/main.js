@@ -189,6 +189,14 @@ ipcMain.handle('account:login', async (_, { email, password }) => {
   return res
 })
 
+ipcMain.handle('account:delete', async () => {
+  const res = await callBackend('/api/auth/delete', 'DELETE', null, true)
+  if (res.ok) {
+    jW('account.json', null)
+  }
+  return res
+})
+
 /* cloud snippets */
 ipcMain.handle('cloud:list', async () => {
   const res = await callBackend('/api/snippets', 'GET')
