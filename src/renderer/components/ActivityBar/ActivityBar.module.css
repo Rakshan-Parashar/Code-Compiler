@@ -1,16 +1,43 @@
 .bar {
-  width: var(--abw); background: var(--bg1); border-right: 1px solid var(--b1);
-  display: flex; flex-direction: column; justify-content: space-between;
-  flex-shrink: 0; padding: 8px 0;
+  width: var(--abw);
+  background: var(--bg1);
+  border: var(--panel-border);
+  border-radius: var(--br);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding: 12px 0;
 }
-.group { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
 .btn {
-  width: 38px; height: 38px; border-radius: 9px;
-  position: relative; color: var(--t4); transition: color var(--ease), background var(--ease);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  position: relative;
+  color: var(--t3);
+  transition: color var(--ease), background var(--ease);
 }
-.btn:hover { color: var(--t2); background: var(--bg3); }
-.act { color: var(--t1) !important; }
+.btn:hover {
+  color: var(--t1);
+  background: var(--bg3);
+}
+.act {
+  color: var(--ac) !important;
+}
 .indicator {
-  position: absolute; left: -8px; top: 50%; transform: translateY(-50%);
-  width: 2px; height: 18px; background: var(--ac); border-radius: 0 2px 2px 0;
+  position: absolute;
+  left: 0px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 18px;
+  background: var(--ac);
+  border-radius: 0 3px 3px 0;
+  box-shadow: 0 0 10px var(--ac);
 }

@@ -186,11 +186,11 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
               onClick={() => onJumpToLine?.(lineNum)}
               title={`Jump to line ${lineNum} in editor`}
               style={{
-                background: 'rgba(124, 58, 237, 0.15)',
-                color: '#9461f7',
-                border: '1px solid rgba(124, 58, 237, 0.4)',
-                borderRadius: '3px',
-                padding: '1px 5px',
+                background: 'var(--acd)',
+                color: 'var(--ac)',
+                border: '1px solid var(--acg)',
+                borderRadius: '4px',
+                padding: '2px 6px',
                 fontSize: '11px',
                 cursor: 'pointer',
                 margin: '0 4px',
@@ -209,8 +209,7 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
   }
 
   return (
-    <div className={S.backdrop} onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div className={S.panel} style={{ width: 620, height: '85vh', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', background: 'var(--bg1)' }}>
         {/* Header */}
         <div className={S.hdr}>
           <div className={S.hdrLeft}>
@@ -224,7 +223,7 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
         </div>
 
         {/* Navigation Tabs */}
-        <div style={{ display: 'flex', borderBottom: '1px solid #1c1c24', background: '#0a0a0d', padding: '0 16px' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', background: 'rgba(0, 0, 0, 0.15)', padding: '0 16px' }}>
           <button 
             onClick={() => setTab('review')}
             style={{
@@ -232,10 +231,11 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
               background: 'none',
               border: 'none',
               borderBottom: tab === 'review' ? '2px solid var(--ac)' : '2px solid transparent',
-              color: tab === 'review' ? '#fff' : '#8c8c9e',
+              color: tab === 'review' ? 'var(--ac)' : 'var(--t2)',
               cursor: 'pointer',
               fontWeight: tab === 'review' ? 'bold' : 'normal',
-              fontSize: '13px'
+              fontSize: '13px',
+              transition: 'all var(--ease)'
             }}
           >
             📋 AI Code Reviewer
@@ -247,10 +247,11 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
               background: 'none',
               border: 'none',
               borderBottom: tab === 'chat' ? '2px solid var(--ac)' : '2px solid transparent',
-              color: tab === 'chat' ? '#fff' : '#8c8c9e',
+              color: tab === 'chat' ? 'var(--ac)' : 'var(--t2)',
               cursor: 'pointer',
               fontWeight: tab === 'chat' ? 'bold' : 'normal',
-              fontSize: '13px'
+              fontSize: '13px',
+              transition: 'all var(--ease)'
             }}
           >
             💬 AI Copilot Chat
@@ -258,17 +259,17 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
         </div>
 
         {/* Tab Content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', background: '#0d0d12', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', background: 'var(--bg2)', display: 'flex', flexDirection: 'column' }}>
           
           {/* TAB 1: CODE REVIEWER */}
           {tab === 'review' && (
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
               {/* Target info & AI Config */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: '#121218', padding: '12px 14px', borderRadius: '6px', border: '1px solid #1c1c24', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: 'rgba(255, 255, 255, 0.03)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.05)', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <span style={{ color: '#8c8c9e', fontSize: '12px' }}>Reviewing: </span>
-                    <span style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+                    <span style={{ color: 'var(--t3)', fontSize: '12px' }}>Reviewing: </span>
+                    <span style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold', fontFamily: 'var(--fmono)' }}>
                       {activeFile ? activeFile.name : 'No active file open'}
                     </span>
                   </div>
@@ -277,9 +278,9 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
                       value={settings.aiProvider || 'ollama'} 
                       onChange={e => updateSettings({ aiProvider: e.target.value })}
                       style={{ 
-                        background: '#0d0d12', 
-                        border: '1px solid #2d2d38', 
-                        color: '#fff', 
+                        background: 'rgba(255, 255, 255, 0.03)', 
+                        border: '1px solid rgba(255, 255, 255, 0.08)', 
+                        color: 'var(--t1)', 
                         fontSize: '11px', 
                         padding: '4px 8px', 
                         borderRadius: '4px',
@@ -296,15 +297,15 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
                 {/* Conditional Model / API Key Input */}
                 {settings.aiProvider === 'gemini' ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <span style={{ color: '#8c8c9e', fontSize: '11px' }}>Gemini API Key:</span>
+                    <span style={{ color: 'var(--t3)', fontSize: '11px' }}>Gemini API Key:</span>
                     <input 
                       type="password"
                       placeholder={hasEnvKey ? "Loaded from .env (Active)" : "Enter API Key here..."}
                       value={settings.geminiApiKey || ''}
                       onChange={e => updateSettings({ geminiApiKey: e.target.value })}
                       style={{
-                        background: '#0d0d12',
-                        border: '1px solid #2d2d38',
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
                         borderRadius: '4px',
                         padding: '5px 8px',
                         color: '#fff',
@@ -315,15 +316,15 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <span style={{ color: '#8c8c9e', fontSize: '11px' }}>Ollama Model:</span>
+                    <span style={{ color: 'var(--t3)', fontSize: '11px' }}>Ollama Model:</span>
                     <input 
                       type="text"
                       placeholder="e.g. codellama, llama3, mistral..."
                       value={settings.ollamaModel || 'codellama'}
                       onChange={e => updateSettings({ ollamaModel: e.target.value })}
                       style={{
-                        background: '#0d0d12',
-                        border: '1px solid #2d2d38',
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
                         borderRadius: '4px',
                         padding: '5px 8px',
                         color: '#fff',
@@ -340,7 +341,7 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
                   
                   {/* Step 1: Syntax */}
-                  <div style={{ background: '#121218', padding: '12px', borderRadius: '6px', border: '1px solid #1c1c24' }}>
+                  <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '16px' }}>
@@ -352,20 +353,20 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
                         </span>
                         <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>Phase 1: Quick Syntax Check</span>
                       </div>
-                      <span style={{ fontSize: '11px', color: '#8c8c9e' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--t3)' }}>
                         {reviewStatus.syntax.status === 'running' ? 'Scanning...' : reviewStatus.syntax.status}
                       </span>
                     </div>
-                    {reviewStatus.syntax.msg && <div style={{ fontSize: '12px', color: '#8c8c9e', marginTop: '6px', fontStyle: 'italic' }}>{reviewStatus.syntax.msg}</div>}
+                    {reviewStatus.syntax.msg && <div style={{ fontSize: '12px', color: 'var(--t3)', marginTop: '6px', fontStyle: 'italic' }}>{reviewStatus.syntax.msg}</div>}
                     {reviewStatus.syntax.data && (
-                      <div style={{ marginTop: '10px', background: '#0a0a0d', padding: '8px 12px', borderRadius: '4px', borderLeft: '3px solid #7c3aed', overflowX: 'auto', maxHeight: '150px' }}>
+                      <div style={{ marginTop: '10px', background: 'rgba(0, 0, 0, 0.25)', padding: '8px 12px', borderRadius: '6px', borderLeft: '3px solid var(--ac)', overflowX: 'auto', maxHeight: '150px' }}>
                         {renderFindingsText(reviewStatus.syntax.data)}
                       </div>
                     )}
                   </div>
 
                   {/* Step 2: Detailed Chunked Review */}
-                  <div style={{ background: '#121218', padding: '12px', borderRadius: '6px', border: '1px solid #1c1c24' }}>
+                  <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '16px' }}>
@@ -377,18 +378,18 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
                         </span>
                         <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>Phase 2: Detailed Code Analysis</span>
                       </div>
-                      <span style={{ fontSize: '11px', color: '#8c8c9e' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--t3)' }}>
                         {reviewStatus.detailed.status === 'chunk' 
                           ? `Chunk ${reviewStatus.detailed.current}/${reviewStatus.detailed.total}` 
                           : reviewStatus.detailed.status
                         }
                       </span>
                     </div>
-                    {reviewStatus.detailed.msg && <div style={{ fontSize: '12px', color: '#8c8c9e', marginTop: '6px', fontStyle: 'italic' }}>{reviewStatus.detailed.msg}</div>}
+                    {reviewStatus.detailed.msg && <div style={{ fontSize: '12px', color: 'var(--t3)', marginTop: '6px', fontStyle: 'italic' }}>{reviewStatus.detailed.msg}</div>}
                     
                     {/* Chunk Progress Bar */}
                     {(reviewStatus.detailed.status === 'running' || reviewStatus.detailed.status === 'chunk') && reviewStatus.detailed.total > 1 && (
-                      <div style={{ height: '4px', background: '#1c1c24', borderRadius: '2px', marginTop: '10px', overflow: 'hidden' }}>
+                      <div style={{ height: '4px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '2px', marginTop: '10px', overflow: 'hidden' }}>
                         <div style={{ 
                           height: '100%', 
                           background: 'var(--ac)', 
@@ -399,7 +400,7 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
                     )}
 
                     {reviewStatus.detailed.data && (
-                      <div style={{ marginTop: '10px', background: '#0a0a0d', padding: '8px 12px', borderRadius: '4px', borderLeft: '3px solid #059669', overflowX: 'auto', maxHeight: '250px' }}>
+                      <div style={{ marginTop: '10px', background: 'rgba(0, 0, 0, 0.25)', padding: '8px 12px', borderRadius: '6px', borderLeft: '3px solid var(--green)', overflowX: 'auto', maxHeight: '250px' }}>
                         {renderFindingsText(reviewStatus.detailed.data)}
                       </div>
                     )}
@@ -410,7 +411,7 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
                 <div style={{ textAlign: 'center', margin: '40px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                   <span style={{ fontSize: '40px' }}>🔍</span>
                   <div style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>Ready to review code</div>
-                  <p style={{ color: '#8c8c9e', fontSize: '13px', maxWidth: '340px', lineHeight: '1.4' }}>
+                  <p style={{ color: 'var(--t3)', fontSize: '13px', maxWidth: '340px', lineHeight: '1.4' }}>
                     Clicking review will trigger a quick syntax check first, followed by a detailed chunk-by-chunk logic review.
                   </p>
                 </div>
@@ -422,14 +423,15 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
                   <button 
                     onClick={cancelReview}
                     style={{
-                      background: '#d32f2f',
-                      color: '#fff',
-                      border: 'none',
+                      background: 'rgba(255, 51, 102, 0.1)',
+                      border: '1px solid rgba(255, 51, 102, 0.2)',
+                      color: 'var(--red)',
                       padding: '10px 18px',
-                      borderRadius: '4px',
+                      borderRadius: '8px',
                       cursor: 'pointer',
                       fontWeight: 'bold',
-                      fontSize: '13px'
+                      fontSize: '13px',
+                      transition: 'all var(--ease)'
                     }}
                   >
                     ⏹ Cancel Review
@@ -439,14 +441,15 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
                     onClick={startCodeReview}
                     disabled={!activeFile}
                     style={{
-                      background: activeFile ? 'var(--ac)' : '#2d2d38',
-                      color: activeFile ? '#fff' : '#5a5a6e',
-                      border: 'none',
+                      background: activeFile ? 'linear-gradient(135deg, var(--ac) 0%, var(--acl) 100%)' : 'rgba(255, 255, 255, 0.05)',
+                      color: activeFile ? '#060608' : 'var(--t3)',
+                      border: activeFile ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
                       padding: '10px 18px',
-                      borderRadius: '4px',
+                      borderRadius: '8px',
                       cursor: activeFile ? 'pointer' : 'not-allowed',
                       fontWeight: 'bold',
-                      fontSize: '13px'
+                      fontSize: '13px',
+                      transition: 'all var(--ease)'
                     }}
                   >
                     🔍 Run Two-Phase Review
@@ -467,24 +470,25 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
                     key={idx} 
                     style={{
                       alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                      background: msg.role === 'user' ? 'var(--ac)' : '#121218',
-                      color: '#fff',
+                      background: msg.role === 'user' ? 'var(--ac)' : 'rgba(255, 255, 255, 0.03)',
+                      color: msg.role === 'user' ? '#060608' : '#fff',
                       padding: '10px 14px',
                       borderRadius: '8px',
                       maxWidth: '85%',
-                      border: msg.role === 'user' ? 'none' : '1px solid #1c1c24',
+                      border: msg.role === 'user' ? 'none' : '1px solid rgba(255, 255, 255, 0.05)',
                       fontSize: '13px',
                       lineHeight: '1.5',
                       whiteSpace: 'pre-wrap',
-                      fontFamily: msg.content.startsWith('```') ? 'monospace' : 'inherit'
+                      fontFamily: msg.content.startsWith('```') ? 'var(--fmono)' : 'inherit',
+                      boxShadow: msg.role === 'user' ? '0 4px 12px rgba(0, 229, 255, 0.15)' : 'none'
                     }}
                   >
                     {msg.content}
                     {msg.sources && msg.sources.length > 0 && (
-                      <div style={{ fontSize: '11px', color: '#8c8c9e', marginTop: '8px', borderTop: '1px solid #1c1c24', paddingTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--t3)', marginTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
                         <span style={{ fontWeight: 'bold' }}>Context Sources:</span>
                         {msg.sources.map((src, sidx) => (
-                          <span key={sidx} style={{ background: '#1c1c24', color: 'var(--acl)', padding: '1px 5px', borderRadius: '3px', fontFamily: 'monospace', border: '1px solid #2d2d3d' }}>
+                          <span key={sidx} style={{ background: 'rgba(255, 255, 255, 0.04)', color: 'var(--ac)', padding: '1px 5px', borderRadius: '3px', fontFamily: 'var(--fmono)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                             {src}
                           </span>
                         ))}
@@ -493,7 +497,7 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
                   </div>
                 ))}
                 {chatLoading && (
-                  <div style={{ alignSelf: 'flex-start', background: '#121218', color: '#8c8c9e', padding: '10px 14px', borderRadius: '8px', border: '1px solid #1c1c24', fontSize: '13px', fontStyle: 'italic' }}>
+                  <div style={{ alignSelf: 'flex-start', background: 'rgba(255, 255, 255, 0.03)', color: 'var(--t3)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '13px', fontStyle: 'italic' }}>
                     Thinking...
                   </div>
                 )}
@@ -501,7 +505,7 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
               </div>
 
               {/* RAG Toggle Toolbar */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', padding: '6px 10px', background: '#121218', borderRadius: '4px', border: '1px solid #1c1c24', alignSelf: 'stretch' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', padding: '6px 10px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '6px', border: '1px solid rgba(255, 255, 255, 0.05)', alignSelf: 'stretch' }}>
                 <input 
                   type="checkbox" 
                   id="enable-rag"
@@ -510,9 +514,9 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
                   style={{ cursor: 'pointer' }}
                   disabled={!rootFolderPath}
                 />
-                <label htmlFor="enable-rag" style={{ fontSize: '12px', color: rootFolderPath ? '#fff' : '#5a5a6e', cursor: rootFolderPath ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: '4px', userSelect: 'none' }}>
+                <label htmlFor="enable-rag" style={{ fontSize: '12px', color: rootFolderPath ? '#fff' : 'var(--t3)', cursor: rootFolderPath ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: '4px', userSelect: 'none' }}>
                   🔍 <strong>Codebase RAG</strong> (Search entire workspace)
-                  {!rootFolderPath && <span style={{ fontSize: '10px', color: '#8c8c9e', fontStyle: 'italic' }}>(Open a folder first)</span>}
+                  {!rootFolderPath && <span style={{ fontSize: '10px', color: 'var(--t3)', fontStyle: 'italic' }}>(Open a folder first)</span>}
                 </label>
               </div>
 
@@ -526,26 +530,28 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
                   disabled={chatLoading}
                   style={{
                     flex: 1,
-                    background: '#121218',
-                    border: '1px solid #1c1c24',
-                    borderRadius: '4px',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '8px',
                     padding: '10px 14px',
                     color: '#fff',
-                    fontSize: '13px'
+                    fontSize: '13px',
+                    outline: 'none'
                   }}
                 />
                 <button 
                   type="submit" 
                   disabled={chatLoading || !chatQuery.trim()}
                   style={{
-                    background: chatQuery.trim() && !chatLoading ? 'var(--ac)' : '#2d2d38',
-                    color: chatQuery.trim() && !chatLoading ? '#fff' : '#5a5a6e',
-                    border: 'none',
+                    background: chatQuery.trim() && !chatLoading ? 'linear-gradient(135deg, var(--ac) 0%, var(--acl) 100%)' : 'rgba(255, 255, 255, 0.05)',
+                    color: chatQuery.trim() && !chatLoading ? '#060608' : 'var(--t3)',
+                    border: chatQuery.trim() && !chatLoading ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
                     padding: '0 16px',
-                    borderRadius: '4px',
+                    borderRadius: '8px',
                     cursor: chatQuery.trim() && !chatLoading ? 'pointer' : 'not-allowed',
                     fontWeight: 'bold',
-                    fontSize: '13px'
+                    fontSize: '13px',
+                    transition: 'all var(--ease)'
                   }}
                 >
                   Send
@@ -556,6 +562,5 @@ export default function AiPanel({ activeFile, rootFolderPath, onClose, notify, o
 
         </div>
       </div>
-    </div>
   )
 }

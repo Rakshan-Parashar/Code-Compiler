@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
     yield
 
 # Initialize FastAPI App
-app = FastAPI(title="Zenith IDE Backend", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Atmos IDE Backend", version="1.0.0", lifespan=lifespan)
 
 # Setup CORS middleware
 app.add_middleware(
@@ -90,6 +90,9 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class DeleteAccountRequest(BaseModel):
+    password: str
+
 class SnippetSchema(BaseModel):
     id: Optional[str] = None
     name: str = Field(..., min_length=1)
@@ -131,7 +134,7 @@ class ProxyRequestSchema(BaseModel):
 @app.get("/")
 def read_root():
     """Health check root endpoint."""
-    return {"status": "ok", "message": "Zenith IDE Backend is running."}
+    return {"status": "ok", "message": "Atmos IDE Backend is running."}
 
 @app.post("/api/auth/signup")
 def signup(user_in: UserSignup, database = Depends(get_db)):
@@ -196,8 +199,17 @@ def login(user_in: UserLogin, database = Depends(get_db)):
     }
 
 @app.delete("/api/auth/delete")
-def delete_account(current_user = Depends(get_current_user), database = Depends(get_db)):
+def delete_account(
+    req: DeleteAccountRequest,
+    current_user = Depends(get_current_user),
+    database = Depends(get_db)
+):
     """Deletes the authenticated user account and all their snippets from local database."""
+    if not auth_manager.verify_password(req.password, current_user["password_hash"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password. Verification failed."
+        )
     database.snippets.delete_many({"userId": current_user["email"]})
     database.users.delete_one({"email": current_user["email"]})
     return {"ok": True, "message": "Account and snippets deleted successfully."}

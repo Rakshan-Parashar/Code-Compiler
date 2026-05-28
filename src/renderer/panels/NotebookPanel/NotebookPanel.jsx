@@ -54,7 +54,7 @@ export default function NotebookPanel({
               <path d="M4 3h8M4 6h8M4 9h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
               <rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
             </svg>
-            <span style={{ fontWeight: 'bold' }}>Zenith Notebooks</span>
+            <span style={{ fontWeight: 'bold' }}>Atmos Notebooks</span>
           </div>
           <button className={S.closeBtn} onClick={onClose}>×</button>
         </div>
@@ -63,7 +63,7 @@ export default function NotebookPanel({
         <div className={S.body} style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
           
           {/* Left Sidebar: Notebook list */}
-          <div style={{ width: 280, borderRight: '1px solid var(--b1)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px', background: '#0a0a0d' }}>
+          <div style={{ width: 280, borderRight: '1px solid rgba(255, 255, 255, 0.05)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px', background: 'rgba(0, 0, 0, 0.15)' }}>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <input 
                 type="text" 
@@ -72,8 +72,8 @@ export default function NotebookPanel({
                 onChange={e => setSearch(e.target.value)}
                 style={{
                   flex: 1,
-                  background: '#121218',
-                  border: '1px solid #1c1c24',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
                   borderRadius: '6px',
                   padding: '6px 10px',
                   color: '#fff',
@@ -85,8 +85,8 @@ export default function NotebookPanel({
                 onClick={() => setIsCreating(true)}
                 title="Create Notebook"
                 style={{
-                  background: 'var(--ac)',
-                  color: '#fff',
+                  background: 'linear-gradient(135deg, var(--ac) 0%, var(--acl) 100%)',
+                  color: '#060608',
                   border: 'none',
                   borderRadius: '6px',
                   width: '28px',
@@ -105,8 +105,8 @@ export default function NotebookPanel({
 
             {/* Create Notebook Form */}
             {isCreating && (
-              <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '10px', background: '#121218', borderRadius: '6px', border: '1px solid #1c1c24' }}>
-                <span style={{ fontSize: '11px', color: '#8c8c9e', fontWeight: 'bold' }}>NEW NOTEBOOK NAME</span>
+              <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <span style={{ fontSize: '11px', color: 'var(--t3)', fontWeight: 'bold' }}>NEW NOTEBOOK NAME</span>
                 <input 
                   type="text"
                   placeholder="e.g. todo, notes"
@@ -114,8 +114,8 @@ export default function NotebookPanel({
                   onChange={e => setNewNotebookName(e.target.value)}
                   autoFocus
                   style={{
-                    background: '#0d0d12',
-                    border: '1px solid #2d2d38',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
                     borderRadius: '4px',
                     padding: '5px 8px',
                     color: '#fff',
@@ -130,7 +130,7 @@ export default function NotebookPanel({
                     style={{
                       background: 'none',
                       border: 'none',
-                      color: '#8c8c9e',
+                      color: 'var(--t3)',
                       fontSize: '11px',
                       cursor: 'pointer',
                       padding: '4px 8px'
@@ -141,8 +141,8 @@ export default function NotebookPanel({
                   <button 
                     type="submit"
                     style={{
-                      background: 'var(--ac)',
-                      color: '#fff',
+                      background: 'linear-gradient(135deg, var(--ac) 0%, var(--acl) 100%)',
+                      color: '#060608',
                       border: 'none',
                       borderRadius: '4px',
                       fontSize: '11px',
@@ -160,7 +160,7 @@ export default function NotebookPanel({
             {/* Notebooks List */}
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {filtered.length === 0 ? (
-                <div style={{ textAlign: 'center', color: '#5a5a6e', fontSize: '12px', marginTop: '20px' }}>
+                <div style={{ textAlign: 'center', color: 'var(--t3)', fontSize: '12px', marginTop: '20px' }}>
                   No notebooks found
                 </div>
               ) : (
@@ -174,10 +174,10 @@ export default function NotebookPanel({
                       justifyContent: 'space-between',
                       padding: '8px 12px',
                       borderRadius: '6px',
-                      background: activeNotebook?.name === name ? 'rgba(124, 58, 237, 0.15)' : 'none',
-                      border: activeNotebook?.name === name ? '1px solid rgba(124, 58, 237, 0.4)' : '1px solid transparent',
+                      background: activeNotebook?.name === name ? 'var(--acd)' : 'none',
+                      border: activeNotebook?.name === name ? '1px solid var(--acg)' : '1px solid transparent',
                       cursor: 'pointer',
-                      color: activeNotebook?.name === name ? '#fff' : '#b5b5c0',
+                      color: activeNotebook?.name === name ? 'var(--ac)' : 'var(--t2)',
                       transition: 'all 0.15s ease'
                     }}
                     onMouseEnter={e => {
@@ -198,7 +198,7 @@ export default function NotebookPanel({
                       style={{
                         background: 'none',
                         border: 'none',
-                        color: '#d32f2f',
+                        color: 'var(--red)',
                         cursor: 'pointer',
                         fontSize: '14px',
                         padding: '2px 6px',
@@ -207,7 +207,7 @@ export default function NotebookPanel({
                         alignItems: 'center',
                         justifyContent: 'center'
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(211, 47, 47, 0.1)'}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255, 51, 102, 0.1)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'none'}
                     >
                       ×
@@ -219,28 +219,28 @@ export default function NotebookPanel({
           </div>
 
           {/* Right Column: Editor & Preview */}
-          <div style={{ flex: 1, background: '#0d0d12', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ flex: 1, background: 'var(--bg2)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {activeNotebook ? (
               <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
                 {/* Active Notebook Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', borderBottom: '1px solid #1c1c24', background: '#0a0a0d' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', background: 'rgba(0, 0, 0, 0.15)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>
                       {activeNotebook.name.replace(/\.md$/, '')}
                     </span>
                     {activeNotebook.modified ? (
-                      <span style={{ color: '#d97706', fontSize: '10px' }}>● Unsaved</span>
+                      <span style={{ color: 'var(--yellow)', fontSize: '10px' }}>● Unsaved</span>
                     ) : (
-                      <span style={{ color: '#059669', fontSize: '10px' }}>● Saved</span>
+                      <span style={{ color: 'var(--green)', fontSize: '10px' }}>● Saved</span>
                     )}
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button 
                       onClick={handleSave}
                       style={{
-                        background: activeNotebook.modified ? 'var(--ac)' : '#2d2d38',
-                        color: activeNotebook.modified ? '#fff' : '#8c8c9e',
-                        border: 'none',
+                        background: activeNotebook.modified ? 'linear-gradient(135deg, var(--ac) 0%, var(--acl) 100%)' : 'rgba(255, 255, 255, 0.05)',
+                        color: activeNotebook.modified ? '#060608' : 'var(--t3)',
+                        border: activeNotebook.modified ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
                         borderRadius: '6px',
                         padding: '6px 12px',
                         fontSize: '11px',
@@ -253,9 +253,9 @@ export default function NotebookPanel({
                     <button 
                       onClick={() => setActiveNotebook(null)}
                       style={{
-                        background: '#2d2d38',
-                        color: '#fff',
-                        border: 'none',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        color: 'var(--t2)',
                         borderRadius: '6px',
                         padding: '6px 12px',
                         fontSize: '11px',
@@ -288,10 +288,10 @@ export default function NotebookPanel({
                 </div>
               </div>
             ) : (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#5a5a6e', gap: '14px', padding: '40px' }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--t3)', gap: '14px', padding: '40px' }}>
                 <span style={{ fontSize: '48px' }}>📝</span>
-                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#8c8c9e' }}>No Notebook Open</div>
-                <p style={{ fontSize: '12px', color: '#5a5a6e', maxWidth: '300px', textAlign: 'center', lineHeight: '1.5' }}>
+                <div style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--t2)' }}>No Notebook Open</div>
+                <p style={{ fontSize: '12px', color: 'var(--t3)', maxWidth: '300px', textAlign: 'center', lineHeight: '1.5' }}>
                   Select an existing notebook from the sidebar or click the <b>+</b> button to create a new Markdown notebook.
                 </p>
               </div>

@@ -7,7 +7,10 @@ import {
   updateProfile,
   GoogleAuthProvider,
   signInWithPopup,
-  deleteUser
+  deleteUser,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  reauthenticateWithPopup
 } from 'firebase/auth';
 import {
   getFirestore,
@@ -102,10 +105,31 @@ export async function fbLogout() {
   }
 }
 
-export async function fbDeleteAccount() {
+export async function fbDeleteAccount(password) {
   if (!auth) throw new Error("Firebase SDK not initialized. Verify .env credentials.");
   const user = auth.currentUser;
   if (!user) throw new Error("No authenticated user session found.");
+
+  // Re-authenticate user before deletion
+  const isGoogleUser = user.providerData.some(p => p.providerId === 'google.com');
+  if (isGoogleUser) {
+    try {
+      const provider = new GoogleAuthProvider();
+      await reauthenticateWithPopup(user, provider);
+    } catch (e) {
+      throw new Error("Failed to re-authenticate with Google: " + e.message);
+    }
+  } else {
+    if (!password) {
+      throw new Error("Password is required to delete your account.");
+    }
+    try {
+      const credential = EmailAuthProvider.credential(user.email, password);
+      await reauthenticateWithCredential(user, credential);
+    } catch (e) {
+      throw new Error("Incorrect password. Re-authentication failed.");
+    }
+  }
 
   if (db) {
     try {

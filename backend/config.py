@@ -10,10 +10,10 @@ load_dotenv(dotenv_path=env_path)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("zenith-backend")
+logger = logging.getLogger("atmos-backend")
 
 # JWT configuration
-JWT_SECRET = os.getenv("JWT_SECRET", "super-secret-zenith-ide-key-change-in-production")
+JWT_SECRET = os.getenv("JWT_SECRET", "super-secret-atmos-ide-key-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 

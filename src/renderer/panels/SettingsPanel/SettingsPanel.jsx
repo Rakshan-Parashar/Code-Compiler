@@ -118,12 +118,12 @@ export default function SettingsPanel({ settings, onUpdate, onClose, notify }) {
 
                 <div className={S.previewBox} style={{ '--ac': settings.accentColor, '--acl': settings.accentColor }}>
                   <div className={S.previewBar} style={{ background: settings.accentColor }}>
-                    <span>⚡ Zenith IDE Preview</span>
+                    <span>⚡ Atmos IDE Preview</span>
                   </div>
                   <div className={S.previewBody}>
                     <div className={S.previewLine} style={{ color: '#c792ea' }}>function</div>
                     <div className={S.previewLine} style={{ color: '#82aaff' }}>  helloWorld</div>
-                    <div className={S.previewLine} style={{ color: '#a8ff78' }}>    "Zenith IDE"</div>
+                    <div className={S.previewLine} style={{ color: '#a8ff78' }}>    "Atmos IDE"</div>
                   </div>
                 </div>
               </div>

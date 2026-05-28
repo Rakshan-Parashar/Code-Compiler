@@ -29,17 +29,18 @@ export default function DataPanel({ onClose, notify }) {
               <span style={{ fontWeight: 700, fontSize: 15 }}>Data Tools</span>
             </div>
             
-            <div style={{ display: 'flex', background: 'var(--bg3)', borderRadius: 8, padding: 3, gap: 4 }}>
+            <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: 10, padding: 3, gap: 4 }}>
               <button 
                 onClick={() => setActiveTab('db')}
                 style={{
                   padding: '5px 12px',
-                  borderRadius: 6,
+                  borderRadius: 8,
                   fontSize: 12,
                   fontWeight: 600,
-                  background: activeTab === 'db' ? 'var(--bg1)' : 'transparent',
-                  color: activeTab === 'db' ? 'var(--t1)' : 'var(--t3)',
-                  cursor: 'pointer'
+                  background: activeTab === 'db' ? 'var(--acg)' : 'transparent',
+                  color: activeTab === 'db' ? 'var(--ac)' : 'var(--t2)',
+                  cursor: 'pointer',
+                  transition: 'all var(--ease)'
                 }}
               >
                 MongoDB Explorer
@@ -48,12 +49,13 @@ export default function DataPanel({ onClose, notify }) {
                 onClick={() => setActiveTab('api')}
                 style={{
                   padding: '5px 12px',
-                  borderRadius: 6,
+                  borderRadius: 8,
                   fontSize: 12,
                   fontWeight: 600,
-                  background: activeTab === 'api' ? 'var(--bg1)' : 'transparent',
-                  color: activeTab === 'api' ? 'var(--t1)' : 'var(--t3)',
-                  cursor: 'pointer'
+                  background: activeTab === 'api' ? 'var(--acg)' : 'transparent',
+                  color: activeTab === 'api' ? 'var(--ac)' : 'var(--t2)',
+                  cursor: 'pointer',
+                  transition: 'all var(--ease)'
                 }}
               >
                 API Client
@@ -64,7 +66,7 @@ export default function DataPanel({ onClose, notify }) {
         </div>
 
         {/* Tab Contents */}
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden', borderTop: '1px solid var(--b1)' }}>
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
           {activeTab === 'db' ? (
             <DbExplorer notify={notify} />
           ) : (
@@ -227,8 +229,8 @@ function DbExplorer({ notify }) {
       <div 
         style={{ 
           width: 220, 
-          borderRight: '1px solid var(--b1)', 
-          background: 'var(--bg0)', 
+          borderRight: '1px solid rgba(255, 255, 255, 0.05)', 
+          background: 'rgba(0, 0, 0, 0.15)', 
           overflowY: 'auto',
           padding: '12px 8px',
           display: 'flex',
@@ -279,9 +281,10 @@ function DbExplorer({ notify }) {
                       borderRadius: 5,
                       textAlign: 'left',
                       fontSize: 12,
-                      background: (selectedDb === db && selectedCollection === col) ? 'var(--acd)' : 'transparent',
-                      color: (selectedDb === db && selectedCollection === col) ? 'var(--acl)' : 'var(--t3)',
-                      cursor: 'pointer'
+                      background: (selectedDb === db && selectedCollection === col) ? 'var(--acg)' : 'transparent',
+                      color: (selectedDb === db && selectedCollection === col) ? 'var(--ac)' : 'var(--t3)',
+                      cursor: 'pointer',
+                      transition: 'all var(--ease)'
                     }}
                   >
                     ⚡ {col}
@@ -304,7 +307,7 @@ function DbExplorer({ notify }) {
         {selectedCollection ? (
           <>
             {/* Explorer Toolbar */}
-            <div style={{ display: 'flex', gap: 10, padding: 12, borderBottom: '1px solid var(--b1)', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 10, padding: 12, borderBottom: '1px solid rgba(255, 255, 255, 0.05)', alignItems: 'center' }}>
               <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
                 <input 
                   value={queryText}
@@ -313,12 +316,13 @@ function DbExplorer({ notify }) {
                   style={{
                     fontFamily: 'var(--fmono)',
                     fontSize: 12,
-                    background: 'var(--bg3)',
-                    border: '1px solid var(--b2)',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
                     borderRadius: 6,
                     padding: '6px 10px',
                     color: 'var(--t1)',
-                    width: '100%'
+                    width: '100%',
+                    outline: 'none'
                   }}
                   onKeyDown={e => e.key === 'Enter' && handleSearch()}
                 />
@@ -337,10 +341,11 @@ function DbExplorer({ notify }) {
                   borderRadius: 6,
                   fontSize: 12,
                   fontWeight: 600,
-                  background: 'var(--bg3)',
-                  border: '1px solid var(--b2)',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
                   color: 'var(--t1)',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  transition: 'all var(--ease)'
                 }}
               >
                 + Insert Doc
@@ -362,16 +367,16 @@ function DbExplorer({ notify }) {
                     <div 
                       key={doc._id} 
                       style={{ 
-                        background: 'var(--bg0)', 
-                        border: '1px solid var(--b1)', 
-                        borderRadius: 8,
+                        background: 'rgba(255, 255, 255, 0.02)', 
+                        border: '1px solid rgba(255, 255, 255, 0.05)', 
+                        borderRadius: 10,
                         padding: 12
                       }}
                     >
                       {/* Document Item Header */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, borderBottom: '1px solid var(--b2)', paddingBottom: 6 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: 6 }}>
                         <span style={{ fontSize: 11, fontFamily: 'var(--fmono)', color: 'var(--t3)' }}>
-                          ID: <strong style={{ color: 'var(--acl)' }}>{doc._id}</strong>
+                          ID: <strong style={{ color: 'var(--ac)' }}>{doc._id}</strong>
                         </span>
                         <div style={{ display: 'flex', gap: 4 }}>
                           <button 
@@ -379,19 +384,19 @@ function DbExplorer({ notify }) {
                               navigator.clipboard.writeText(JSON.stringify(doc, null, 2))
                               notify?.('success', 'Document JSON copied!')
                             }}
-                            style={{ padding: '2px 8px', borderRadius: 4, background: 'var(--bg3)', fontSize: 10, color: 'var(--t2)', cursor: 'pointer' }}
+                            style={{ padding: '3px 8px', borderRadius: 4, background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255,255,255,0.05)', fontSize: 10, color: 'var(--t2)', cursor: 'pointer', transition: 'all var(--ease)' }}
                           >
                             Copy JSON
                           </button>
                           <button 
                             onClick={() => handleOpenEdit(doc)}
-                            style={{ padding: '2px 8px', borderRadius: 4, background: 'var(--bg3)', fontSize: 10, color: 'var(--t2)', cursor: 'pointer' }}
+                            style={{ padding: '3px 8px', borderRadius: 4, background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255,255,255,0.05)', fontSize: 10, color: 'var(--t2)', cursor: 'pointer', transition: 'all var(--ease)' }}
                           >
                             Edit
                           </button>
                           <button 
                             onClick={() => handleDeleteDoc(doc._id)}
-                            style={{ padding: '2px 8px', borderRadius: 4, background: 'rgba(239, 68, 68, 0.15)', fontSize: 10, color: 'var(--red)', cursor: 'pointer' }}
+                            style={{ padding: '3px 8px', borderRadius: 4, background: 'rgba(255, 51, 102, 0.1)', border: '1px solid rgba(255, 51, 102, 0.15)', fontSize: 10, color: 'var(--red)', cursor: 'pointer', transition: 'all var(--ease)' }}
                           >
                             Delete
                           </button>
@@ -419,7 +424,7 @@ function DbExplorer({ notify }) {
             </div>
 
             {/* Pagination footer */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderTop: '1px solid var(--b1)', background: 'var(--bg0)', flexShrink: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', background: 'rgba(0, 0, 0, 0.15)', flexShrink: 0 }}>
               <span style={{ fontSize: 11, color: 'var(--t3)' }}>
                 Showing skip <strong style={{ color: 'var(--t1)' }}>{skip}</strong> to <strong style={{ color: 'var(--t1)' }}>{skip + documents.length}</strong>
               </span>
@@ -429,12 +434,13 @@ function DbExplorer({ notify }) {
                   onClick={handlePrevPage}
                   style={{
                     padding: '4px 12px',
-                    borderRadius: 5,
+                    borderRadius: 6,
                     fontSize: 11,
-                    background: skip === 0 ? 'transparent' : 'var(--bg3)',
-                    color: skip === 0 ? 'var(--t4)' : 'var(--t1)',
-                    border: '1px solid var(--b2)',
-                    cursor: skip === 0 ? 'not-allowed' : 'pointer'
+                    background: skip === 0 ? 'transparent' : 'rgba(255, 255, 255, 0.04)',
+                    color: skip === 0 ? 'var(--t4)' : 'var(--t2)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    cursor: skip === 0 ? 'not-allowed' : 'pointer',
+                    transition: 'all var(--ease)'
                   }}
                 >
                   ◀ Prev
@@ -444,12 +450,13 @@ function DbExplorer({ notify }) {
                   onClick={handleNextPage}
                   style={{
                     padding: '4px 12px',
-                    borderRadius: 5,
+                    borderRadius: 6,
                     fontSize: 11,
-                    background: !hasMore ? 'transparent' : 'var(--bg3)',
-                    color: !hasMore ? 'var(--t4)' : 'var(--t1)',
-                    border: '1px solid var(--b2)',
-                    cursor: !hasMore ? 'not-allowed' : 'pointer'
+                    background: !hasMore ? 'transparent' : 'rgba(255, 255, 255, 0.04)',
+                    color: !hasMore ? 'var(--t4)' : 'var(--t2)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    cursor: !hasMore ? 'not-allowed' : 'pointer',
+                    transition: 'all var(--ease)'
                   }}
                 >
                   Next ▶
@@ -574,12 +581,12 @@ function ApiClient({ notify }) {
   return (
     <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden', background: 'var(--bg2)' }}>
       {/* URL Selector Toolbar */}
-      <div style={{ display: 'flex', gap: 8, padding: 12, borderBottom: '1px solid var(--b1)', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 8, padding: 12, borderBottom: '1px solid rgba(255, 255, 255, 0.05)', alignItems: 'center' }}>
         <select 
           value={method} 
           onChange={e => setMethod(e.target.value)}
           className={S.select} 
-          style={{ width: 100, height: 34, padding: '0 8px', fontSize: 13, border: '1px solid var(--b2)', outline: 'none' }}
+          style={{ width: 100, height: 34, padding: '0 8px', fontSize: 13, border: '1px solid rgba(255, 255, 255, 0.08)', outline: 'none' }}
         >
           <option>GET</option>
           <option>POST</option>
@@ -594,13 +601,14 @@ function ApiClient({ notify }) {
           placeholder="https://api.example.com/endpoint"
           style={{
             flex: 1,
-            background: 'var(--bg3)',
-            border: '1px solid var(--b2)',
-            borderRadius: 7,
+            background: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: 8,
             padding: '7px 12px',
             fontSize: 13,
             color: 'var(--t1)',
-            height: 34
+            height: 34,
+            outline: 'none'
           }}
           onKeyDown={e => e.key === 'Enter' && handleSendRequest()}
         />
@@ -609,7 +617,7 @@ function ApiClient({ notify }) {
           className={S.saveBtn} 
           onClick={handleSendRequest}
           disabled={resLoading}
-          style={{ width: 100, height: 34, padding: 0, borderRadius: 7, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          style={{ width: 100, height: 34, padding: 0, borderRadius: 8, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           {resLoading ? 'Sending...' : 'Send'}
         </button>
@@ -618,20 +626,21 @@ function ApiClient({ notify }) {
       {/* Main content grid splitter */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* Left: Request Params & Configuration */}
-        <div style={{ width: '45%', borderRight: '1px solid var(--b1)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ width: '45%', borderRight: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {/* Subheaders/Tabs */}
-          <div style={{ display: 'flex', borderBottom: '1px solid var(--b1)', background: 'var(--bg0)' }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', background: 'rgba(0, 0, 0, 0.15)' }}>
             <button 
               onClick={() => setParamTab('headers')}
               style={{
                 flex: 1,
                 padding: '10px',
-                fontSize: 12,
+                fontSize: 12.5,
                 fontWeight: 600,
-                color: paramTab === 'headers' ? 'var(--ac)' : 'var(--t3)',
-                borderBottom: paramTab === 'headers' ? '2px solid var(--ac)' : 'none',
+                color: paramTab === 'headers' ? 'var(--ac)' : 'var(--t2)',
+                borderBottom: paramTab === 'headers' ? '2px solid var(--ac)' : '2px solid transparent',
                 background: 'transparent',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                transition: 'all var(--ease)'
               }}
             >
               Headers ({headers.length})
@@ -641,12 +650,13 @@ function ApiClient({ notify }) {
               style={{
                 flex: 1,
                 padding: '10px',
-                fontSize: 12,
+                fontSize: 12.5,
                 fontWeight: 600,
-                color: paramTab === 'body' ? 'var(--ac)' : 'var(--t3)',
-                borderBottom: paramTab === 'body' ? '2px solid var(--ac)' : 'none',
+                color: paramTab === 'body' ? 'var(--ac)' : 'var(--t2)',
+                borderBottom: paramTab === 'body' ? '2px solid var(--ac)' : '2px solid transparent',
                 background: 'transparent',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                transition: 'all var(--ease)'
               }}
             >
               Body Payload
@@ -672,15 +682,15 @@ function ApiClient({ notify }) {
                       value={h.key}
                       onChange={e => handleHeaderChange(idx, 'key', e.target.value)}
                       placeholder="Header Name"
-                      style={{ flex: 1, background: 'var(--bg3)', border: '1px solid var(--b1)', borderRadius: 5, padding: '4px 8px', fontSize: 12, color: 'var(--t1)' }}
+                      style={{ flex: 1, background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 6, padding: '6px 10px', fontSize: 12, color: 'var(--t1)', outline: 'none' }}
                     />
                     <input 
                       value={h.value}
                       onChange={e => handleHeaderChange(idx, 'value', e.target.value)}
                       placeholder="Value"
-                      style={{ flex: 1, background: 'var(--bg3)', border: '1px solid var(--b1)', borderRadius: 5, padding: '4px 8px', fontSize: 12, color: 'var(--t1)' }}
+                      style={{ flex: 1, background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 6, padding: '6px 10px', fontSize: 12, color: 'var(--t1)', outline: 'none' }}
                     />
-                    <button onClick={() => handleRemoveHeader(idx)} style={{ color: 'var(--t4)', background: 'transparent', fontSize: 14, padding: '0 4px', cursor: 'pointer' }}>×</button>
+                    <button onClick={() => handleRemoveHeader(idx)} style={{ color: 'var(--red)', background: 'transparent', fontSize: 18, padding: '0 4px', cursor: 'pointer' }}>×</button>
                   </div>
                 ))}
               </div>
@@ -688,13 +698,13 @@ function ApiClient({ notify }) {
               <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <div style={{ display: 'flex', gap: 10, marginBottom: 8, alignItems: 'center' }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t3)', letterSpacing: '.06em', textTransform: 'uppercase' }}>Body Type:</span>
-                  <div style={{ display: 'flex', background: 'var(--bg3)', borderRadius: 6, padding: 2, gap: 2 }}>
-                    <button onClick={() => setBodyTab('none')} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 4, background: bodyTab === 'none' ? 'var(--bg1)' : 'transparent', color: bodyTab === 'none' ? 'var(--t1)' : 'var(--t3)', cursor: 'pointer' }}>none</button>
-                    <button onClick={() => setBodyTab('json')} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 4, background: bodyTab === 'json' ? 'var(--bg1)' : 'transparent', color: bodyTab === 'json' ? 'var(--t1)' : 'var(--t3)', cursor: 'pointer' }}>JSON</button>
+                  <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: 8, padding: 2, gap: 2 }}>
+                    <button onClick={() => setBodyTab('none')} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 6, background: bodyTab === 'none' ? 'var(--acg)' : 'transparent', color: bodyTab === 'none' ? 'var(--ac)' : 'var(--t2)', cursor: 'pointer', transition: 'all var(--ease)' }}>none</button>
+                    <button onClick={() => setBodyTab('json')} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 6, background: bodyTab === 'json' ? 'var(--acg)' : 'transparent', color: bodyTab === 'json' ? 'var(--ac)' : 'var(--t2)', cursor: 'pointer', transition: 'all var(--ease)' }}>JSON</button>
                   </div>
                 </div>
                 {bodyTab === 'json' ? (
-                  <div style={{ flex: 1, minHeight: 180, border: '1px solid var(--b1)', borderRadius: 6, overflow: 'hidden' }}>
+                  <div style={{ flex: 1, minHeight: 180, border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: 8, overflow: 'hidden' }}>
                     <Editor
                       height="100%"
                       language="json"
@@ -710,7 +720,7 @@ function ApiClient({ notify }) {
                     />
                   </div>
                 ) : (
-                  <div style={{ padding: 20, textAlign: 'center', border: '1px dashed var(--b2)', borderRadius: 6, color: 'var(--t3)', fontSize: 12 }}>
+                  <div style={{ padding: 20, textAlign: 'center', border: '1px dashed rgba(255, 255, 255, 0.1)', borderRadius: 8, color: 'var(--t3)', fontSize: 12 }}>
                     This request does not send an HTTP body payload.
                   </div>
                 )}
@@ -729,7 +739,7 @@ function ApiClient({ notify }) {
           ) : response ? (
             <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
               {/* Response Stats */}
-              <div style={{ display: 'flex', gap: 14, alignItems: 'center', background: 'var(--bg0)', border: '1px solid var(--b1)', borderRadius: 8, padding: '8px 12px', marginBottom: 10 }}>
+              <div style={{ display: 'flex', gap: 14, alignItems: 'center', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: 8, padding: '8px 12px', marginBottom: 10 }}>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12 }}>
                   <span style={{ color: 'var(--t3)' }}>Status:</span>
                   <span 
@@ -737,7 +747,7 @@ function ApiClient({ notify }) {
                       padding: '2px 8px', 
                       borderRadius: 4, 
                       fontWeight: 700,
-                      background: response.status >= 200 && response.status < 300 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                      background: response.status >= 200 && response.status < 300 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 51, 102, 0.15)',
                       color: response.status >= 200 && response.status < 300 ? 'var(--green)' : 'var(--red)'
                     }}
                   >
@@ -763,7 +773,7 @@ function ApiClient({ notify }) {
               {/* Response Body Monaco */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t3)', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 6 }}>Response Body</span>
-                <div style={{ flex: 1, border: '1px solid var(--b1)', borderRadius: 8, overflow: 'hidden' }}>
+                <div style={{ flex: 1, border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: 8, overflow: 'hidden' }}>
                   <Editor
                     height="100%"
                     language={typeof response.body === 'object' ? 'json' : 'plaintext'}
@@ -781,7 +791,7 @@ function ApiClient({ notify }) {
               </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--t3)', gap: 10, border: '1px dashed var(--b2)', borderRadius: 8 }}>
+            <div style={{ display: 'flex', flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--t3)', gap: 10, border: '1px dashed rgba(255, 255, 255, 0.1)', borderRadius: 8 }}>
               <span style={{ fontSize: 32 }}>📡</span>
               <span style={{ fontSize: 13, fontWeight: 500 }}>Enter an endpoint and hit Send to test API responses</span>
             </div>

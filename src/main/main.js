@@ -189,8 +189,13 @@ ipcMain.handle('account:login', async (_, { email, password }) => {
   return res
 })
 
-ipcMain.handle('account:delete', async () => {
-  const res = await callBackend('/api/auth/delete', 'DELETE', null, true)
+ipcMain.handle('account:delete', async (_, payload) => {
+  const { password, isFirebase } = payload || {}
+  if (isFirebase) {
+    jW('account.json', null)
+    return { ok: true }
+  }
+  const res = await callBackend('/api/auth/delete', 'DELETE', { password }, true)
   if (res.ok) {
     jW('account.json', null)
   }
@@ -392,6 +397,7 @@ const RUNNERS = {
   python:     { ext: 'py',   cmd: process.platform === 'win32' ? 'python' : 'python3' },
   shellscript:{ ext: 'sh',   cmd: 'bash' },
   bash:       { ext: 'sh',   cmd: 'bash' },
+  shell:      { ext: 'sh',   cmd: 'bash' },
   ruby:       { ext: 'rb',   cmd: 'ruby' },
   php:        { ext: 'php',  cmd: 'php'  },
   go:         { ext: 'go',   cmd: 'go', args: ['run'] },
@@ -476,19 +482,46 @@ ipcMain.handle('exec:stop', () => {
 })
 
 /* pty terminal */
-ipcMain.handle('pty:create', async (_, { cwd }) => {
+const ptyProcesses = new Map()
+
+ipcMain.handle('pty:create', async (_, { id = 'default', cwd }) => {
   try {
     const pty = require('node-pty')
     const shell = process.platform === 'win32' ? 'powershell.exe' : (process.env.SHELL || '/bin/bash')
-    ptyProcess = pty.spawn(shell, [], { name: 'xterm-256color', cols: 120, rows: 30, cwd: cwd || os.homedir(), env: process.env })
-    ptyProcess.onData(d => win.webContents.send('pty:data', d))
-    ptyProcess.onExit(({ exitCode }) => win.webContents.send('pty:exit', exitCode))
+    const proc = pty.spawn(shell, [], { name: 'xterm-256color', cols: 120, rows: 30, cwd: cwd || os.homedir(), env: process.env })
+    ptyProcesses.set(id, proc)
+    proc.onData(d => {
+      if (win && !win.isDestroyed()) win.webContents.send(`pty:data:${id}`, d)
+    })
+    proc.onExit(({ exitCode }) => {
+      if (win && !win.isDestroyed()) win.webContents.send(`pty:exit:${id}`, exitCode)
+    })
     return { ok: true }
   } catch (e) { return { ok: false, error: e.message } }
 })
-ipcMain.on('pty:write',  (_, d) => { if (ptyProcess) ptyProcess.write(d) })
-ipcMain.on('pty:resize', (_, { cols, rows }) => { if (ptyProcess) try { ptyProcess.resize(cols, rows) } catch {} })
-ipcMain.handle('pty:kill', () => { if (ptyProcess) { try { ptyProcess.kill() } catch {} ptyProcess = null } })
+ipcMain.on('pty:write',  (_, { id = 'default', data }) => {
+  const proc = ptyProcesses.get(id)
+  if (proc) proc.write(data)
+})
+ipcMain.on('pty:resize', (_, { id = 'default', cols, rows }) => {
+  const proc = ptyProcesses.get(id)
+  if (proc) try { proc.resize(cols, rows) } catch {}
+})
+ipcMain.handle('pty:kill', (_, payload) => {
+  const { id = 'default' } = payload || {}
+  const proc = ptyProcesses.get(id)
+  if (proc) {
+    try { proc.kill() } catch {}
+    ptyProcesses.delete(id)
+  }
+})
+
+app.on('will-quit', () => {
+  for (const proc of ptyProcesses.values()) {
+    try { proc.kill() } catch {}
+  }
+  ptyProcesses.clear()
+})
 
 /* ai code review & chat */
 let currentAiController = null
@@ -655,6 +688,21 @@ ipcMain.handle('sys:info', () => ({
   home: os.homedir(), shell: process.env.SHELL || 'powershell',
   cpus: os.cpus().length, memory: { total: os.totalmem(), free: os.freemem() },
 }))
+
+ipcMain.handle('sys:openExternal', (_, url) => {
+  shell.openExternal(url)
+})
+ipcMain.handle('sys:env', () => {
+  const envs = {}
+  for (const key in process.env) {
+    if (/key|token|auth|password|secret|cred/i.test(key)) {
+      envs[key] = '••••••••••••'
+    } else {
+      envs[key] = process.env[key]
+    }
+  }
+  return envs
+})
 
 /* file watcher */
 const watchers = new Map()

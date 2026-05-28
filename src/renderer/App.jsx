@@ -13,6 +13,7 @@ import CloudPanel from "./panels/CloudPanel/CloudPanel.jsx";
 import AiPanel from "./panels/AiPanel/AiPanel.jsx";
 import NotebookPanel from "./panels/NotebookPanel/NotebookPanel.jsx";
 import DataPanel from "./panels/DataPanel/DataPanel.jsx";
+import HelpOverlayPanel from "./panels/HelpOverlayPanel/HelpOverlayPanel.jsx";
 import { useFiles } from "./hooks/useFiles.js";
 import { useTerminal } from "./hooks/useTerminal.js";
 import { useSettings } from "./hooks/useSettings.js";
@@ -32,7 +33,17 @@ export default function App() {
   const [activePanel, setActivePanel] = useState("output");
   const [splitMode, setSplitMode] = useState(false);
   const [gotoLine, setGotoLine] = useState(null);
+  const [panelMaximized, setPanelMaximized] = useState(false);
+  const [editorMode, setEditorMode] = useState("code"); // 'code', 'preview', 'debug'
   const dragging = useRef(false);
+
+  const handleEditorModeChange = useCallback((mode) => {
+    setEditorMode(mode);
+    if (mode === "debug") {
+      setActivePanel("debug");
+      setPanelOpen(true);
+    }
+  }, [setActivePanel, setPanelOpen]);
 
 
 
@@ -96,6 +107,14 @@ export default function App() {
           g.toString(16).padStart(2, "0") +
           b.toString(16).padStart(2, "0"),
       );
+      
+      const baseR = parseInt(h.slice(0, 2), 16);
+      const baseG = parseInt(h.slice(2, 4), 16);
+      const baseB = parseInt(h.slice(4, 6), 16);
+      if (!isNaN(baseR) && !isNaN(baseG) && !isNaN(baseB)) {
+        document.documentElement.style.setProperty("--acd", `rgba(${baseR}, ${baseG}, ${baseB}, 0.08)`);
+        document.documentElement.style.setProperty("--acg", `rgba(${baseR}, ${baseG}, ${baseB}, 0.22)`);
+      }
     }
   }, [settings.accentColor]);
 
@@ -112,6 +131,14 @@ export default function App() {
     await handleSave();
     if (!activeFile.path) {
       notify("error", "Please save the file first to run it in the terminal.");
+      return;
+    }
+
+    if (activePanel === "output") {
+      setPanelOpen(true);
+      setRunning(true);
+      clearTerminal();
+      await window.api.runCode(activeFile.content, lang);
       return;
     }
 
@@ -135,17 +162,20 @@ export default function App() {
     } else if (ext === 'go') {
       runCmd = `go run "${fp}"`;
     } else if (ext === 'c') {
-      const outName = fp.slice(0, fp.lastIndexOf('.'));
+      const outBase = fp.slice(0, fp.lastIndexOf('.'));
+      const outName = isWin ? `${outBase}.exe` : outBase;
       runCmd = isWin 
         ? `gcc "${fp}" -o "${outName}"; if ($?) { & "${outName}" }` 
         : `gcc "${fp}" -o "${outName}" && "${outName}"`;
     } else if (ext === 'cpp') {
-      const outName = fp.slice(0, fp.lastIndexOf('.'));
+      const outBase = fp.slice(0, fp.lastIndexOf('.'));
+      const outName = isWin ? `${outBase}.exe` : outBase;
       runCmd = isWin 
         ? `g++ "${fp}" -o "${outName}"; if ($?) { & "${outName}" }` 
         : `g++ "${fp}" -o "${outName}" && "${outName}"`;
     } else if (ext === 'rs') {
-      const outName = fp.slice(0, fp.lastIndexOf('.'));
+      const outBase = fp.slice(0, fp.lastIndexOf('.'));
+      const outName = isWin ? `${outBase}.exe` : outBase;
       runCmd = isWin 
         ? `rustc "${fp}" -o "${outName}"; if ($?) { & "${outName}" }` 
         : `rustc "${fp}" -o "${outName}" && "${outName}"`;
@@ -163,7 +193,17 @@ export default function App() {
       const ctrlC = '\x03'; // Send Ctrl+C to cancel current line input
       window.api.ptyWrite(ctrlC + runCmd + '\r');
     }, 450);
-  }, [activeFile, handleSave, setActivePanel, setPanelOpen, notify]);
+  }, [activeFile, handleSave, activePanel, setRunning, clearTerminal, lang, setActivePanel, setPanelOpen, notify]);
+
+  const handleJumpToProblem = useCallback(async (filePath, line) => {
+    const existing = openFiles.find(f => f.path === filePath);
+    if (existing) {
+      setActiveFile(existing.id);
+    } else {
+      await openFile({ path: filePath });
+    }
+    setGotoLine({ line, ts: Date.now() });
+  }, [openFiles, openFile, setActiveFile, setGotoLine]);
 
   const handleStop = useCallback(() => window.api.stopCode(), []);
 
@@ -190,12 +230,15 @@ export default function App() {
   const onDivider = useCallback(
     (e) => {
       e.preventDefault();
+      setPanelMaximized(false);
       dragging.current = true;
       const y0 = e.clientY,
         h0 = panelH;
       const move = (e) => {
-        if (dragging.current)
-          setPanelH(Math.max(80, Math.min(700, h0 + y0 - e.clientY)));
+        if (dragging.current) {
+          const maxH = Math.max(100, window.innerHeight - 150);
+          setPanelH(Math.max(80, Math.min(maxH, h0 + y0 - e.clientY)));
+        }
       };
       const up = () => {
         dragging.current = false;
@@ -321,13 +364,22 @@ export default function App() {
         onZenMode={() => updateSettings({ zenMode: !settings.zenMode })}
         onPalette={() => setPalOpen(true)}
         onFormat={formatFile}
-        onAI={() => setOverlay("ai")}
+        onAI={() => setOverlay((v) => (v === "ai" ? null : "ai"))}
         onData={() => setOverlay("data")}
+        onClearTerminal={clearTerminal}
+        onShowWelcome={() => setOverlay("welcome")}
+        onShowShortcuts={() => setOverlay("shortcuts")}
+        onShowAbout={() => setOverlay("about")}
+        onShowGoToLine={() => setOverlay("gotoline")}
+        onOpenAccount={() => setOverlay("account")}
+        onOpenCloud={() => setOverlay("cloud")}
         branch={git.branch}
         gitStatus={git.status}
         zenMode={settings.zenMode}
         splitMode={splitMode}
         errorCount={errorCount}
+        editorMode={editorMode}
+        onChangeEditorMode={handleEditorModeChange}
       />
       <div className={S.body}>
         {!settings.zenMode && (
@@ -359,27 +411,30 @@ export default function App() {
           />
         )}
         <div className={S.main}>
-          <EditorArea
-            openFiles={openFiles}
-            activeFile={activeFile}
-            splitFile={splitFile}
-            settings={settings}
-            language={lang}
-            splitMode={splitMode}
-            lintErrors={lintErrors}
-            onSelectTab={setActiveFile}
-            onCloseTab={closeFile}
-            onChangeContent={updateFileContent}
-            onRun={handleRun}
-            onSave={handleSave}
-            onSplitSelect={setSplitFile}
-            gotoLine={gotoLine}
-          />
+          <div style={{ display: panelMaximized ? 'none' : 'flex', flex: 1, flexDirection: 'column', minHeight: 0 }}>
+            <EditorArea
+              openFiles={openFiles}
+              activeFile={activeFile}
+              splitFile={splitFile}
+              settings={settings}
+              language={lang}
+              splitMode={splitMode}
+              lintErrors={lintErrors}
+              onSelectTab={setActiveFile}
+              onCloseTab={closeFile}
+              onChangeContent={updateFileContent}
+              onRun={handleRun}
+              onSave={handleSave}
+              onSplitSelect={setSplitFile}
+              gotoLine={gotoLine}
+              editorMode={editorMode}
+            />
+          </div>
           {panelOpen && (
             <>
-              <div className={S.divider} onMouseDown={onDivider} />
+              {!panelMaximized && <div className={S.divider} onMouseDown={onDivider} />}
               <BottomPanel
-                height={panelH}
+                height={panelMaximized ? "100%" : panelH}
                 activeTab={activePanel}
                 onTabChange={setActivePanel}
                 lines={lines}
@@ -390,12 +445,37 @@ export default function App() {
                 onRun={handleRun}
                 onStop={handleStop}
                 onClear={clearTerminal}
-                lintErrors={activeFile ? lintErrors[activeFile.id] || [] : []}
+                lintErrors={lintErrors}
+                openFiles={openFiles}
                 activeFile={activeFile}
+                panelMaximized={panelMaximized}
+                onToggleMaximize={() => setPanelMaximized(p => !p)}
+                onClosePanel={() => setPanelOpen(false)}
+                onJumpToProblem={handleJumpToProblem}
               />
             </>
           )}
         </div>
+        {overlay === "ai" && !settings.zenMode && (
+          <div className={S.aiSidebar}>
+            <AiPanel
+              activeFile={activeFile}
+              rootFolderPath={rootFolderPath}
+              onClose={() => setOverlay(null)}
+              notify={notify}
+              settings={settings}
+              updateSettings={updateSettings}
+              onJumpToLine={(line) => setGotoLine({ line, ts: Date.now() })}
+              onInsert={(code) => {
+                if (activeFile)
+                  updateFileContent(
+                    activeFile.id,
+                    activeFile.content + "\n" + code,
+                  );
+              }}
+            />
+          </div>
+        )}
       </div>
       <StatusBar
         language={lang}
@@ -444,24 +524,7 @@ export default function App() {
           onOpenFile={openFile}
         />
       )}
-      {overlay === "ai" && (
-        <AiPanel
-          activeFile={activeFile}
-          rootFolderPath={rootFolderPath}
-          onClose={() => setOverlay(null)}
-          notify={notify}
-          settings={settings}
-          updateSettings={updateSettings}
-          onJumpToLine={(line) => setGotoLine({ line, ts: Date.now() })}
-          onInsert={(code) => {
-            if (activeFile)
-              updateFileContent(
-                activeFile.id,
-                activeFile.content + "\n" + code,
-              );
-          }}
-        />
-      )}
+
       {overlay === "notebooks" && (
         <NotebookPanel
           onClose={() => setOverlay(null)}
@@ -474,6 +537,21 @@ export default function App() {
           deleteNotebook={notebooks.deleteNotebook}
           updateContent={notebooks.updateContent}
           setActiveNotebook={notebooks.setActiveNotebook}
+        />
+      )}
+      {['welcome', 'about', 'shortcuts', 'gotoline'].includes(overlay) && (
+        <HelpOverlayPanel
+          view={overlay}
+          onClose={() => setOverlay(null)}
+          openFiles={openFiles}
+          activeFile={activeFile}
+          onSelectTab={setActiveFile}
+          onNewFile={newFile}
+          onOpenFolder={openFolder}
+          onOpenFile={openFile}
+          onAI={() => setOverlay("ai")}
+          onOpenSettings={() => setOverlay("settings")}
+          onJumpToLine={(line) => setGotoLine({ line, ts: Date.now() })}
         />
       )}
       {palOpen && (

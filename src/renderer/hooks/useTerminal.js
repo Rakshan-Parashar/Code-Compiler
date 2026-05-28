@@ -6,7 +6,12 @@ export function useTerminal() {
   const [lastMs, setLastMs] = useState(null)
 
   const appendLine = useCallback(line => setLines(p => [...p, line]), [])
-  const clearTerminal = useCallback(() => setLines([]), [])
+  const clearTerminal = useCallback(() => {
+    setLines([]);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('terminal-clear'));
+    }
+  }, [])
   const setDone = useCallback(({ code, ms }) => {
     setRunning(false)
     setLastMs(ms)

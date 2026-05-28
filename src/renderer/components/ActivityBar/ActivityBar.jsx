@@ -9,8 +9,6 @@ const TOP = [
   { id:'extensions',  title:'Extensions',        grid:true },
 ]
 const BOT = [
-  { id:'cloud',    title:'Cloud Sync',  cloud:true },
-  { id:'account',  title:'Account',     person:true },
   { id:'settings', title:'Settings',    gear:true },
 ]
 

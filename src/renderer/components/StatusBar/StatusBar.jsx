@@ -8,8 +8,11 @@ export default function StatusBar({ language, fileName, modified, line, col, run
     <footer className={S.bar}>
       <div className={S.left}>
         <button className={`${S.item} ${S.brand}`}>
-          <svg viewBox="0 0 20 20" width="11" fill="none"><polygon points="10,2 18,16 2,16" stroke="#fff" strokeWidth="2" strokeLinejoin="round"/></svg>
-          Zenith
+          <svg viewBox="0 0 14 14" fill="none" width="11" stroke="currentColor" strokeWidth="1.5">
+            <circle cx="7" cy="7" r="5" />
+            <path d="M7 4v6M4 7h6" />
+          </svg>
+          Atmos
         </button>
         {running && <span className={`${S.item} ${S.running}`}>● Running…</span>}
       </div>

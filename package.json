@@ -1,7 +1,7 @@
 {
   "name": "zenith-ide",
   "version": "3.0.0",
-  "description": "Zenith IDE – Ultimate Hybrid Code Execution Environment",
+  "description": "Atmos IDE – Ultimate Hybrid Code Execution Environment",
   "main": "src/main/main.js",
   "scripts": {
     "dev": "concurrently \".venv\\\\Scripts\\\\python -m uvicorn backend.main:app --reload\" \"vite\" \"wait-on http://localhost:5174 && electron .\"",
@@ -28,8 +28,8 @@
     "react-dom": "^18.2.0"
   },
   "build": {
-    "appId": "com.zenith.ide",
-    "productName": "Zenith IDE",
+    "appId": "com.atmos.ide",
+    "productName": "Atmos IDE",
     "directories": {
       "output": "dist-electron"
     },

@@ -2,22 +2,23 @@
 
 :root {
   /* Backgrounds */
-  --bg0: #0a0a0d;
-  --bg1: #0f0f14;
-  --bg2: #141419;
-  --bg3: #1a1a21;
-  --bg4: #1f1f28;
-  --bghov: #1c1c25;
+  --bg0: #060608;          /* Workspace base backdrop */
+  --bg1: #0d0d12;          /* Panel cards background */
+  --bg2: #121218;          /* Editor base background */
+  --bg3: #181822;          /* Header, inputs & active highlights */
+  --bg4: #1d1d28;          /* Lighter utility items */
+  --bghov: #20202e;
 
   /* Accents */
-  --ac: #7C3AED;
-  --acl: #9461f7;
-  --acd: rgba(124, 58, 237, 0.12);
-  --acg: rgba(124, 58, 237, 0.28);
+  --ac: #00e5ff;           /* Neon electric cyan */
+  --acl: #33f0ff;          /* Vibrant cyan light */
+  --acd: rgba(0, 229, 255, 0.08);
+  --acg: rgba(0, 229, 255, 0.22);
+  --acgrad: linear-gradient(135deg, #00f0ff 0%, #7C3AED 100%); /* Blue-cyan to purple gradient */
 
   /* Colors */
-  --green: #22c55e;
-  --red: #ef4444;
+  --green: #00ff88;
+  --red: #ff3366;
   --yellow: #f59e0b;
   --blue: #3b82f6;
   --cyan: #06b6d4;
@@ -29,23 +30,27 @@
   --t4: #32324a;
 
   /* Borders/Overlays */
-  --b1: rgba(255, 255, 255, 0.05);
-  --b2: rgba(255, 255, 255, 0.09);
-  --b3: rgba(255, 255, 255, 0.15);
+  --b1: rgba(255, 255, 255, 0.06);
+  --b2: rgba(255, 255, 255, 0.1);
+  --b3: rgba(255, 255, 255, 0.18);
 
   /* Dimensions */
-  --tbh: 38px;
-  --abw: 46px;
+  --tbh: 44px;
+  --abw: 48px;
   --sbw: 242px;
   --sbh: 22px;
-  --tabh: 35px;
+  --tabh: 36px;
 
   /* Typography */
   --fui: 'Inter', system-ui, sans-serif;
   --fmono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
 
   /* Animation */
-  --ease: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ease: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Borders & Roundings */
+  --br: 12px;
+  --panel-border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 *,
