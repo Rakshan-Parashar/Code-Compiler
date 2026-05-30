@@ -24,6 +24,7 @@
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/addon-web-links": "^0.11.0",
     "@xterm/xterm": "^5.3.0",
+    "electron-updater": "^6.8.3",
     "firebase": "^10.8.0",
     "monaco-editor": "^0.45.0",
     "node-pty": "^1.1.0",
@@ -33,6 +34,13 @@
   "build": {
     "appId": "com.atmos.ide",
     "productName": "Atmos IDE",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Rakshan-Parashar",
+        "repo": "Code-Compiler"
+      }
+    ],
     "directories": {
       "output": "dist-electron"
     },

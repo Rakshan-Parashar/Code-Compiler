@@ -1,8 +1,43 @@
 const { app, BrowserWindow, ipcMain, dialog, Menu, shell, clipboard } = require('electron')
+const { autoUpdater } = require('electron-updater')
 const path = require('path')
 const fs = require('fs')
 const os = require('os')
 const { spawn, execSync } = require('child_process')
+
+// Auto-updater event listeners for automated updates
+autoUpdater.on('checking-for-update', () => {
+  console.log('[Updater] Checking for update...')
+})
+autoUpdater.on('update-available', (info) => {
+  console.log('[Updater] Update available:', info.version)
+})
+autoUpdater.on('update-not-available', () => {
+  console.log('[Updater] Update not available.')
+})
+autoUpdater.on('error', (err) => {
+  console.error('[Updater] Error in auto-updater:', err)
+})
+autoUpdater.on('download-progress', (progressObj) => {
+  console.log(`[Updater] Download progress: ${Math.round(progressObj.percent)}%`)
+})
+autoUpdater.on('update-downloaded', (info) => {
+  console.log('[Updater] Update downloaded')
+  if (win) {
+    dialog.showMessageBox(win, {
+      type: 'info',
+      title: 'Update Ready',
+      message: `A new version of Atmos IDE (${info.version}) has been downloaded. Restart the application now to apply the update?`,
+      buttons: ['Restart Now', 'Later']
+    }).then((result) => {
+      if (result.response === 0) {
+        autoUpdater.quitAndInstall()
+      }
+    })
+  } else {
+    autoUpdater.quitAndInstall()
+  }
+})
 
 // Load .env file at root level or near executable
 try {
@@ -198,6 +233,11 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow()
+  
+  if (!isDev) {
+    autoUpdater.checkForUpdatesAndNotify()
+  }
+  
   app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow() })
 })
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit() })
