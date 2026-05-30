@@ -9,6 +9,7 @@ const DEF = {
   smoothScrolling: true, stickyScroll: true, bracketPairColors: true,
   zenMode: false, liveErrors: true,
   aiProvider: 'ollama', geminiApiKey: '', ollamaModel: 'codellama',
+  defaultOutputChannel: 'output',
 }
 export function useSettings() {
   const [settings, setSettings] = useState(DEF)

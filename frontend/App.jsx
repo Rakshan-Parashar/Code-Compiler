@@ -178,7 +178,10 @@ export default function App() {
       return;
     }
 
-    if (activePanel === "output") {
+    const channel = settings.defaultOutputChannel || "output";
+
+    if (channel === "output") {
+      setActivePanel("output");
       setPanelOpen(true);
       setRunning(true);
       clearTerminal();
@@ -237,7 +240,7 @@ export default function App() {
       const ctrlC = '\x03'; // Send Ctrl+C to cancel current line input
       window.api.ptyWrite(ctrlC + runCmd + '\r');
     }, 450);
-  }, [activeFile, handleSave, activePanel, setRunning, clearTerminal, lang, setActivePanel, setPanelOpen, notify]);
+  }, [activeFile, handleSave, settings, setRunning, clearTerminal, lang, setActivePanel, setPanelOpen, notify]);
 
   const handleJumpToProblem = useCallback(async (filePath, line) => {
     const existing = openFiles.find(f => f.path === filePath);

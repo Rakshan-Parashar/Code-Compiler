@@ -135,11 +135,12 @@ export default function SettingsPanel({ settings, onUpdate, onClose, notify }) {
                 <Row label="Font Size" hint="Terminal font size in pixels">
                   <input type="number" min="10" max="24" value={settings.terminalFontSize} onChange={e => set('terminalFontSize', +e.target.value)} className={S.numInput} />
                 </Row>
-                <div className={S.infoBox}>
-                  <b>Full terminal support</b> requires <code>node-pty</code>.<br/>
-                  Run <code>npm install node-pty</code> then <code>npm run install:native</code> after installation.
-                  Without it, a fallback shell is used.
-                </div>
+                <Row label="Default Output Channel" hint="Choose the default panel for code execution output">
+                  <select value={settings.defaultOutputChannel || 'output'} onChange={e => set('defaultOutputChannel', e.target.value)} className={S.select}>
+                    <option value="output">Output Panel</option>
+                    <option value="terminal">Terminal Panel</option>
+                  </select>
+                </Row>
               </div>
             )}
 

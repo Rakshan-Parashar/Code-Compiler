@@ -121,6 +121,7 @@ const DEF_SETTINGS = {
   smoothScrolling: true, stickyScroll: true, bracketPairColors: true,
   zenMode: false, liveErrors: true,
   aiProvider: 'ollama', geminiApiKey: '', ollamaModel: 'codellama',
+  defaultOutputChannel: 'output',
 }
 
 function createWindow() {
