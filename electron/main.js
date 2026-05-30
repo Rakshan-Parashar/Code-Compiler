@@ -6,7 +6,7 @@ const { spawn, execSync } = require('child_process')
 
 // Load .env file at root level
 try {
-  const envPath = path.join(__dirname, '../../.env')
+  const envPath = path.join(__dirname, '../.env')
   if (fs.existsSync(envPath)) {
     const envContent = fs.readFileSync(envPath, 'utf-8')
     envContent.split(/\r?\n/).forEach(line => {
@@ -24,7 +24,7 @@ try {
   console.error('Failed to load .env file:', e)
 }
 
-const isDev = process.env.NODE_ENV !== 'production'
+const isDev = !app.isPackaged
 let win = null, runningProcess = null, ptyProcess = null
 
 const ud = () => app.getPath('userData')
@@ -46,6 +46,7 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1500, height: 920, minWidth: 900, minHeight: 600,
     frame: false,
+    icon: path.join(__dirname, 'icon.png'),
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
     trafficLightPosition: { x: 14, y: 12 },
     backgroundColor: '#0a0a0d',
@@ -91,7 +92,7 @@ function createWindow() {
       }
     })
   } else {
-    win.loadFile(path.join(__dirname, '../../dist/index.html'))
+    win.loadFile(path.join(__dirname, '../dist/index.html'))
   }
   
   // Forward renderer console messages to terminal console for easy debugging
