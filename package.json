@@ -38,7 +38,8 @@
     },
     "files": [
       "dist/**/*",
-      "electron/**/*"
+      "electron/**/*",
+      ".env"
     ],
     "mac": {
       "category": "public.app-category.developer-tools"

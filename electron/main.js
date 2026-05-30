@@ -37,6 +37,75 @@ try {
 }
 
 const isDev = !app.isPackaged
+
+const http = require('http')
+const mimeTypes = {
+  '.html': 'text/html',
+  '.css': 'text/css',
+  '.js': 'text/javascript',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.json': 'application/json',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.eot': 'font/eot'
+}
+
+let localServer = null
+let localServerPort = 0
+
+function startLocalServer() {
+  return new Promise((resolve, reject) => {
+    localServer = http.createServer((req, res) => {
+      let reqPath = decodeURIComponent(req.url.split('?')[0])
+      if (reqPath === '/') reqPath = '/index.html'
+      
+      const filePath = path.join(__dirname, '../dist', reqPath)
+      fs.stat(filePath, (err, stats) => {
+        if (err || !stats.isFile()) {
+          const indexPath = path.join(__dirname, '../dist/index.html')
+          fs.readFile(indexPath, (readErr, content) => {
+            if (readErr) {
+              res.writeHead(404, { 'Content-Type': 'text/plain' })
+              res.end('Not Found')
+            } else {
+              res.writeHead(200, { 'Content-Type': 'text/html' })
+              res.end(content)
+            }
+          })
+          return
+        }
+
+        fs.readFile(filePath, (readErr, content) => {
+          if (readErr) {
+            res.writeHead(500, { 'Content-Type': 'text/plain' })
+            res.end('Internal Server Error')
+            return
+          }
+          const ext = path.extname(filePath).toLowerCase()
+          const contentType = mimeTypes[ext] || 'application/octet-stream'
+          res.writeHead(200, { 'Content-Type': contentType })
+          res.end(content)
+        })
+      })
+    })
+
+    localServer.listen(0, '127.0.0.1', () => {
+      localServerPort = localServer.address().port
+      console.log(`Local production server started on http://localhost:${localServerPort}`)
+      resolve(localServerPort)
+    })
+
+    localServer.on('error', (err) => {
+      reject(err)
+    })
+  })
+}
+
 let win = null, runningProcess = null, ptyProcess = null
 
 const ud = () => app.getPath('userData')
@@ -104,7 +173,12 @@ function createWindow() {
       }
     })
   } else {
-    win.loadFile(path.join(__dirname, '../dist/index.html'))
+    startLocalServer().then((port) => {
+      win.loadURL(`http://localhost:${port}`)
+    }).catch(err => {
+      console.error('Failed to start local server, fallback to loadFile:', err)
+      win.loadFile(path.join(__dirname, '../dist/index.html'))
+    })
   }
   
   // Forward renderer console messages to terminal console for easy debugging
@@ -534,6 +608,9 @@ app.on('will-quit', () => {
     try { proc.kill() } catch {}
   }
   ptyProcesses.clear()
+  if (localServer) {
+    try { localServer.close() } catch {}
+  }
 })
 
 /* ai code review & chat */

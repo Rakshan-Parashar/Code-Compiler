@@ -32,9 +32,8 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Toggle Firebase features dynamically based on environment keys (disabled in Electron desktop app)
-const isElectron = typeof window !== 'undefined' && navigator.userAgent.toLowerCase().includes('electron');
-export const isFirebaseEnabled = !isElectron && !!(
+// Toggle Firebase features dynamically based on environment keys
+export const isFirebaseEnabled = !!(
   firebaseConfig.apiKey &&
   firebaseConfig.projectId
 );
