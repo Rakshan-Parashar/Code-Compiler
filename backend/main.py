@@ -1,4 +1,12 @@
 import os
+import sys
+
+# Support running directly from inside the backend directory on cloud platforms (e.g. Render)
+backend_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(backend_dir)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 import uuid
 import time
 from typing import List, Optional
