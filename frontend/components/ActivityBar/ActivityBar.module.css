@@ -1,0 +1,52 @@
+.bar {
+  width: var(--abw);
+  background: var(--bg1);
+  border: none;
+  border-right: 1px solid var(--b1);
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding: 12px 0;
+}
+.group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+}
+.btn {
+  width: 100%;
+  height: 48px;
+  position: relative;
+  color: var(--t2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 150ms ease, background 150ms ease;
+}
+.btn:hover {
+  color: var(--t1);
+  background: rgba(255, 255, 255, 0.04);
+}
+.act {
+  color: #ffffff !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.indicator {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 24px;
+  background: var(--ac);
+  border-radius: 0 1px 1px 0;
+  box-shadow: none;
+}

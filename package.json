@@ -1,8 +1,8 @@
 {
-  "name": "zenith-ide",
-  "version": "3.0.0",
+  "name": "atmos-ide",
+  "version": "1.0.0",
   "description": "Atmos IDE – Ultimate Hybrid Code Execution Environment",
-  "main": "src/main/main.js",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "concurrently \".venv\\\\Scripts\\\\python -m uvicorn backend.main:app --reload\" \"vite\" \"wait-on http://localhost:5174 && electron .\"",
     "build": "vite build && electron-builder",
@@ -10,9 +10,12 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.5.0",
     "concurrently": "^8.2.2",
     "electron": "^28.1.0",
     "electron-builder": "^24.9.1",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^3.4.19",
     "vite": "^5.0.10",
     "wait-on": "^7.2.0"
   },
@@ -35,7 +38,7 @@
     },
     "files": [
       "dist/**/*",
-      "src/main/**/*"
+      "electron/**/*"
     ],
     "mac": {
       "category": "public.app-category.developer-tools"

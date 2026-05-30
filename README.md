@@ -1,54 +1,39 @@
-# ⚡ Zenith IDE v3
+# 🌌 Atmos IDE
 
-**Ultimate Hybrid Code Execution Environment** — a full VS Code-style desktop IDE built with Electron, React, Monaco Editor, xterm.js, Vite, and backed by a FastAPI SQLite/WebSocket server for secure local database storage and real-time collaboration.
+**Ultimate Hybrid Code Execution Environment** — a premium, high-performance desktop code compiler and editor built with Electron, React, Monaco Editor, xterm.js, and Vite, backed by a FastAPI SQLite server for secure local database storage and an AI-driven vector RAG (Retrieval-Augmented Generation) assistant.
+
+For a detailed visual guide on data flow, execution mechanisms, and internal communications, check out [STRUCTURE.md](file:///d:/Code-Compiler/STRUCTURE.md).
 
 ---
 
 ## 🗂 Project Structure
 
 ```
-zenith-ide/
-├── backend/
-│   ├── config.py         ← Central configurations & logging setup
-│   ├── db_manager.py     ← OOP Database manager (MongoClient + custom DNS resolver)
-│   ├── auth_manager.py   ← OOP Authentication manager (Password hash, JWT)
-│   ├── collab_manager.py ← OOP Collaboration manager (WebSocket rooms & broadcast)
-│   ├── main.py           ← FastAPI entry point & API route mapping
-│   └── requirements.txt  ← Backend dependencies (fastapi, uvicorn, pymongo, websockets, bcrypt)
-├── src/
-│   ├── main/
-│   │   ├── main.js       ← Electron main process (IPC, fs, exec, pty)
-│   │   └── preload.js    ← Secure contextBridge API
-│   └── renderer/
-│       ├── App.jsx       ← Root layout, WebSocket handlers, overlay router
-│       ├── main.jsx      ← React entry point
-│       ├── components/
-│       │   ├── TitleBar.jsx        Custom title bar + Menus + Collab button
-│       │   ├── ActivityBar.jsx     Left icon navigation bar
-│       │   ├── Sidebar.jsx         Explorer / Search / Git / Extensions
-│       │   ├── EditorArea.jsx      Monaco editor + tabs + local edit hooks
-│       │   ├── BottomPanel.jsx     Output pane + xterm.js terminal
-│       │   ├── StatusBar.jsx       Bottom status bar
-│       │   ├── CommandPalette.jsx  ⌘⇧P command palette
-│       │   └── Notifications.jsx   Toast notification system
-│       ├── panels/
-│       │   ├── SettingsPanel.jsx   Full settings UI (5 tabs)
-│       │   ├── AccountPanel.jsx    Profile editing, user signup & login
-│       │   ├── CloudPanel.jsx      Cloud snippet manager
-│       │   ├── CollabPanel.jsx     Live collaboration session control
-│       │   └── Panel.module.css    Shared panel styles
-│       ├── hooks/
-│       │   ├── useFiles.js         File state + disk I/O
-│       │   ├── useTerminal.js      Output lines state
-│       │   ├── useSettings.js      Persisted settings
-│       │   └── useNotifications.js Toast system
-│       └── styles/
-│           ├── global.css          Design tokens + reset
-│           └── App.module.css      Root layout
-├── index.html
-├── vite.config.js
-├── package.json
-└── README.md
+atmos-ide/
+├── backend/                  # 🐍 FastAPI Backend
+│   ├── main.py               #   FastAPI app entry & routes mapping
+│   ├── config.py             #   App logging and directory configuration
+│   ├── auth_manager.py       #   User validation and session security
+│   ├── db_manager.py         #   SQLite client helper
+│   ├── rag_manager.py        #   AI codebase embeddings index
+│   └── requirements.txt      #   Python dependency list
+│
+├── electron/                 # 🖥️ Electron Main Process (Desktop Wrapper)
+│   ├── main.js               #   OS integrations, IPC routes, compilers runtime
+│   └── preload.js            #   Electron contextBridge IPC mapping
+│
+├── frontend/                 # ⚡ React Frontend App (Web UI)
+│   ├── main.jsx              #   React bootstrap mount
+│   ├── App.jsx               #   Main layout shell, state router
+│   ├── components/           #   Core layout modules (TitleBar, EditorArea, BottomPanel, etc.)
+│   ├── panels/               #   Overlays (Settings, Account, Snippets, AI sidebar)
+│   ├── hooks/                #   React state controllers (useFiles, useSettings, etc.)
+│   └── utils/                #   Utility scripts & browser shims
+│
+├── db.sqlite3                # 💾 SQLite local database (created automatically)
+├── package.json              # 📦 Frontend npm configuration
+├── tailwind.config.js        # 🎨 Tailwind CSS configurations
+└── vite.config.js            # ⚡ Vite frontend bundler config
 ```
 
 ---

@@ -1,0 +1,57 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg0);
+}
+
+.app[data-zen="true"] .sidebar,
+.app[data-zen="true"] .actbar {
+  display: none !important;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  padding: 0;
+  gap: 0;
+  background: var(--bg0);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  min-width: 0;
+  gap: 0;
+}
+
+.divider {
+  height: 4px;
+  background: transparent;
+  cursor: ns-resize;
+  flex-shrink: 0;
+  position: relative;
+  margin: -2px 0;
+  z-index: 50;
+  transition: background var(--ease);
+}
+
+.divider:hover {
+  background: var(--ac);
+}
+
+.aiSidebar {
+  width: 380px;
+  background: var(--bg1);
+  border: var(--panel-border);
+  border-radius: var(--br);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+}

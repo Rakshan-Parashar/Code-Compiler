@@ -1,0 +1,51 @@
+.bar {
+  height: 22px;
+  background: linear-gradient(135deg, var(--acd) 0%, var(--acg) 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding: 0 8px;
+}
+.left, .right {
+  display: flex;
+  align-items: center;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  height: 100%;
+  font-size: 11px;
+  color: var(--t2);
+  white-space: nowrap;
+  transition: background var(--ease), color var(--ease);
+}
+.item:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--t1);
+}
+.brand {
+  font-weight: 500;
+  background: var(--acgrad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  display: inline-flex;
+  align-items: center;
+}
+.brand svg {
+  color: var(--ac) !important;
+}
+.running {
+  color: var(--green);
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+.sep {
+  width: 1px;
+  height: 10px;
+  background: var(--b1);
+}
