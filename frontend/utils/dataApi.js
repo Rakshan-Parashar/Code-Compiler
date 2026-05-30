@@ -1,4 +1,6 @@
-const BACKEND_URL = 'http://localhost:8000';
+const BACKEND_URL = import.meta.env.DEV
+  ? 'http://localhost:8000'
+  : 'https://code-compiler-lr1k.onrender.com';
 
 export async function dbListDatabases() {
   try {

@@ -1,6 +1,8 @@
 // Expose the API to the window object in browser environment
 if (typeof window !== 'undefined' && !window.api) {
-  const BACKEND_URL = 'http://localhost:8000';
+  const BACKEND_URL = import.meta.env.DEV
+    ? 'http://localhost:8000'
+    : 'https://code-compiler-lr1k.onrender.com';
 
   // Helper for backend requests
   async function callBackend(endpoint, method = 'GET', body = null, useToken = true) {

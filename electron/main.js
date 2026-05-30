@@ -126,7 +126,7 @@ ipcMain.handle('win:isMax',  () => win.isMaximized())
 ipcMain.handle('settings:load', () => ({ ...DEF_SETTINGS, ...jR('settings.json', {}) }))
 ipcMain.handle('settings:save', (_, s) => { jW('settings.json', s); return { ok: true } })
 
-const getBackendUrl = () => process.env.BACKEND_URL || 'http://127.0.0.1:8000'
+const getBackendUrl = () => process.env.BACKEND_URL || (app.isPackaged ? 'https://code-compiler-lr1k.onrender.com' : 'http://127.0.0.1:8000')
 
 async function callBackend(endpoint, method = 'GET', body = null, useToken = true) {
   const url = `${getBackendUrl()}${endpoint}`
