@@ -4,10 +4,22 @@ const fs = require('fs')
 const os = require('os')
 const { spawn, execSync } = require('child_process')
 
-// Load .env file at root level
+// Load .env file at root level or near executable
 try {
-  const envPath = path.join(__dirname, '../.env')
-  if (fs.existsSync(envPath)) {
+  const possiblePaths = [
+    path.join(__dirname, '../.env'),
+    path.join(process.cwd(), '.env'),
+    path.join(path.dirname(process.execPath), '.env'),
+    path.join(path.dirname(process.execPath), '../../.env')
+  ]
+  let envPath = null
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      envPath = p
+      break
+    }
+  }
+  if (envPath) {
     const envContent = fs.readFileSync(envPath, 'utf-8')
     envContent.split(/\r?\n/).forEach(line => {
       const trimmed = line.trim()
