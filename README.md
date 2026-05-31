@@ -1,8 +1,18 @@
-# 🌌 Atmos IDE
+# 🌌 ( • ) Atmos IDE
 
-**Ultimate Hybrid Code Execution Environment** — a premium, high-performance desktop code compiler and editor built with Electron, React, Monaco Editor, xterm.js, and Vite, backed by a FastAPI SQLite server for secure local database storage and an AI-driven vector RAG (Retrieval-Augmented Generation) assistant.
+**Atmos IDE** is a premium, high-performance hybrid code editor and execution environment. Built with **Electron, React, Monaco Editor, and Vite**, it features a native **FastAPI + SQLite backend**, a workspace-aware **AI RAG Assistant**, and native compilation tools. It runs seamlessly as a standalone desktop app or can be deployed directly to the web.
 
-For a detailed visual guide on data flow, execution mechanisms, and internal communications, check out [STRUCTURE.md](file:///d:/Code-Compiler/STRUCTURE.md).
+---
+
+## ✨ Key Features
+
+- 🖥️ **Sleek Desktop Client**: A clean, modern developer interface with a flat single-border layout, Consolas typography, and theme-reactive accents.
+- ⚙️ **Multi-Language Runner**: Execute and compile code in **JavaScript, TypeScript, Python, Ruby, PHP, Go, Java, Rust, C, and C++** with real-time feedback.
+- 🔍 **AI Assistant & Workspace RAG**: Ask questions, request reviews, and run codebase-aware RAG queries directly against your open workspace files.
+- 🗄️ **Local SQLite Database**: User authentication and snippet storage are securely managed in a local SQLite file (`db.sqlite3`).
+- ☁️ **Firebase Web Cloud Sync**: Automatically falls back to Firebase Firestore sync when accessed in web browser mode.
+- 🔄 **Auto-Updating EXE**: Packaged installer checks GitHub Releases on startup to download and apply updates silently.
+- 🛠️ **Custom Output Routing**: Easily choose whether execution output prints to the read-only **Output panel** or the interactive **Terminal panel** inside settings.
 
 ---
 
@@ -10,169 +20,116 @@ For a detailed visual guide on data flow, execution mechanisms, and internal com
 
 ```
 atmos-ide/
-├── backend/                  # 🐍 FastAPI Backend
-│   ├── main.py               #   FastAPI app entry & routes mapping
-│   ├── config.py             #   App logging and directory configuration
-│   ├── auth_manager.py       #   User validation and session security
-│   ├── db_manager.py         #   SQLite client helper
-│   ├── rag_manager.py        #   AI codebase embeddings index
-│   └── requirements.txt      #   Python dependency list
+├── backend/                  # 🐍 FastAPI Backend & Database
+│   ├── main.py               #   FastAPI endpoint entry point & SQLite managers
+│   ├── db_manager.py         #   Local database models and schemas
+│   └── requirements.txt      #   Python package dependencies
 │
 ├── electron/                 # 🖥️ Electron Main Process (Desktop Wrapper)
-│   ├── main.js               #   OS integrations, IPC routes, compilers runtime
-│   └── preload.js            #   Electron contextBridge IPC mapping
+│   ├── main.js               #   Window controller, local HTTP server, auto-updater
+│   └── preload.js            #   Secure IPC bridge exposing APIs to UI
 │
-├── frontend/                 # ⚡ React Frontend App (Web UI)
-│   ├── main.jsx              #   React bootstrap mount
-│   ├── App.jsx               #   Main layout shell, state router
-│   ├── components/           #   Core layout modules (TitleBar, EditorArea, BottomPanel, etc.)
-│   ├── panels/               #   Overlays (Settings, Account, Snippets, AI sidebar)
-│   ├── hooks/                #   React state controllers (useFiles, useSettings, etc.)
-│   └── utils/                #   Utility scripts & browser shims
+├── frontend/                 # ⚡ React Frontend (Web UI)
+│   ├── main.jsx              #   React mount bootstrap
+│   ├── App.jsx               #   Layout grid and global state
+│   ├── components/           #   Floating UI components (TitleBar, BottomPanel, etc.)
+│   ├── panels/               #   Settings, Account, and Cloud overlays
+│   └── utils/                #   Firebase, API, and environment shims
 │
-├── db.sqlite3                # 💾 SQLite local database (created automatically)
-├── package.json              # 📦 Frontend npm configuration
-├── tailwind.config.js        # 🎨 Tailwind CSS configurations
-└── vite.config.js            # ⚡ Vite frontend bundler config
+├── db.sqlite3                # 💾 Auto-generated SQLite database
+└── package.json              # 📦 Node dependencies, scripts, and build properties
 ```
 
 ---
 
 ## 🚀 Quick Start
 
-### Frontend Setup
+### 1. Standalone Installer (EXE)
+To run the fully packaged desktop application:
+1. Build the installer by running `npm run build` (outputs to the `dist-electron` folder).
+2. Run `Atmos IDE Setup 1.0.0.exe` to install.
+3. Place your `.env` file in the installation directory (or use the built-in Settings UI to save your Gemini API keys).
 
-#### Requirements
-- **Node.js** v18+ → https://nodejs.org
-- **npm** v8+
+---
 
-#### 1. Install dependencies
+### 2. Development Setup
+
+#### Prerequisites
+- **Node.js** v18+ (https://nodejs.org)
+- **Python** v3.9+
+
+#### Step A: Frontend & Electron Client
 ```bash
+# 1. Install dependencies
 npm install
-```
 
-#### 2. Start in dev mode
-```bash
+# 2. Start Vite dev server and open Electron client
 npm run dev
 ```
-This runs Vite on `localhost:5174` and opens Electron.
 
-#### 3. (Optional) Full terminal support
-For the real interactive shell terminal (bash/zsh/PowerShell), install `node-pty`:
+#### Step B: FastAPI Backend Server
 ```bash
-npm install node-pty
-npm run install:native   # rebuilds native module for Electron
-```
-
----
-
-### Backend Setup (FastAPI & SQLite)
-
-The backend powers user authentication, local snippet synchronization, and WebSocket-based live collaboration.
-
-#### Requirements
-- **Python 3.9+**
-- **SQLite** (included in Python standard library)
-
-#### 1. Setup Virtual Environment
-```bash
-# From the project root
+# 1. Create and activate a Python virtual environment
 python -m venv .venv
-# On Windows PowerShell:
+# Windows PowerShell:
 .venv\Scripts\Activate.ps1
-# On macOS/Linux:
+# Mac/Linux:
 source .venv/bin/activate
-```
 
-#### 2. Install dependencies
-```bash
+# 2. Install backend dependencies
 pip install -r backend/requirements.txt
+
+# 3. Configure your local .env file in the root directory
+# (Set GEMINI_API_KEY, JWT_SECRET, and BACKEND_URL)
 ```
-
-#### 3. Configure Environment Variables
-Copy `.env` to the project root and populate it with:
-```env
-# Google Gemini API Key
-GEMINI_API_KEY=your_gemini_api_key
-
-# SQLite database path is managed automatically
-
-# JWT secret key for session tokens
-JWT_SECRET=your_jwt_secret_key_here
-BACKEND_URL=http://127.0.0.1:8000
-```
-
----
-
-## ✨ Features
-
-| Feature | Description |
-|---------|-------------|
-| **Live Collaboration** | Real-time WebSocket-based multiplayer code editing & cursor tracking. |
-| **Local SQLite Sync** | Securely register/login to store and sync your snippets and settings in a local SQLite database. |
-| **Monaco Editor** | VS Code engine — IntelliSense, syntax highlighting, 20+ languages. |
-| **Code Execution** | Run JS, TS, Python, Bash, Ruby, PHP with real-time stdout/stderr. |
-| **xterm.js Terminal** | Full interactive shell (bash/zsh/PowerShell). |
-| **File Explorer** | Folder tree, create/rename/delete, right-click context menu. |
-| **AI Assistant** | Seamless AI chat & logic diagnostics using Gemini. |
-| **12 Extensions** | Install/uninstall Prettier, ESLint, GitLens, AI Copilot, and more. |
-| **Command Palette** | ⌘⇧P — search files, run commands, navigate. |
-| **Settings Panel** | Font, theme, accent color, auto-save, keybindings (5 tabs). |
-| **Dynamic Profile Stats**| Tracks number of saved files, cloud snippets, and membership age. |
-| **Custom Theme** | Deep obsidian dark theme with violet accent. |
 
 ---
 
 ## ⌨️ Keyboard Shortcuts
 
-| Action | Shortcut |
-|--------|----------|
-| Run file | `F5` |
-| Save | `⌘/Ctrl + S` |
-| Save As | `⌘/Ctrl + Shift + S` |
-| Open file | `⌘/Ctrl + O` |
-| New file | `⌘/Ctrl + N` |
-| Command Palette | `⌘/Ctrl + Shift + P` |
-| Toggle Sidebar | `⌘/Ctrl + Shift + E` |
-| Toggle Panel | `⌘/Ctrl + `` ` |
-| Close tab | `Middle click` tab |
-| AI Review Code | `⌘/Ctrl + Shift + K` |
+| Command | Action |
+|---------|--------|
+| **F5** | Run/Execute active file |
+| **Ctrl + S** | Save changes |
+| **Ctrl + Shift + S** | Save As |
+| **Ctrl + O** | Open file |
+| **Ctrl + N** | New file |
+| **Ctrl + Shift + P** | Open Command Palette |
+| **Ctrl + Shift + E** | Toggle Left Sidebar |
+| **Ctrl + `** | Toggle Bottom Output Panel |
+| **Ctrl + Shift + G** | Focus Git Sidebar |
+| **Ctrl + Shift + K** | Toggle AI Assistant Sidebar |
 
 ---
 
-## 🔧 Supported Languages
+## 🔧 Run & Compilation Matrix
 
-| Language | Extension | Run |
-|----------|-----------|-----|
-| JavaScript | .js .jsx | ✅ Node.js |
-| TypeScript | .ts .tsx | ✅ Node.js |
-| Python | .py | ✅ python |
-| Bash/Shell | .sh | ✅ bash |
-| Ruby | .rb | ✅ ruby |
-| PHP | .php | ✅ php |
-| Go | .go | ✅ go run |
-| Java | .java | ✅ java |
-| Rust | .rs | ✅ rustc |
-| C / C++ | .c .cpp | ✅ gcc / g++ |
-| HTML, CSS, JSON, Markdown, SQL, YAML | edit only | ✗ |
+| Language | File Extension | Compiler/Interpreter Required |
+|----------|----------------|-------------------------------|
+| **JavaScript** | `.js`, `.jsx` | Node.js |
+| **TypeScript** | `.ts`, `.tsx` | Node.js |
+| **Python** | `.py` | python |
+| **Go** | `.go` | go run |
+| **Java** | `.java` | java |
+| **Rust** | `.rs` | rustc |
+| **C** | `.c` | gcc |
+| **C++** | `.cpp` | g++ |
+| **Ruby** | `.rb` | ruby |
+| **PHP** | `.php` | php |
+| **Bash/Shell** | `.sh`, `.bash` | bash |
 
 ---
 
 ## 🛠 Tech Stack
 
-| Technology | Purpose |
-|-----------|---------|
-| **Electron 28** | Cross-platform desktop shell |
-| **React 18** | UI framework |
-| **Monaco Editor** | VS Code editor engine |
-| **FastAPI** | Python microframework for API and WebSocket rooms |
-| **SQLite** | Local database for authentication & snippet syncing |
-| **WebSockets** | Real-time bi-directional collaborative communication |
-| **dnspython** | Robust fallback nameserver (Google/Cloudflare) resolution |
-| **passlib & bcrypt** | Cryptographic password hashing and verification |
-| **xterm.js** | Full terminal emulator |
-| **Vite 5** | Dev server + bundler |
-| **CSS Modules** | Scoped component styling |
+- **Desktop Shell**: Electron 28
+- **UI Engine**: React 18 + Vite 5 + TailwindCSS
+- **Editor**: Monaco Editor (VS Code Engine)
+- **PTY Terminal**: xterm.js + node-pty
+- **Backend API**: FastAPI (Python)
+- **Database**: SQLite (via SQLAlchemy)
+- **Cloud Backup**: Firebase Auth / Firestore (Web Client fallback)
+- **Updater**: Electron Builder Auto-Updater
 
 ---
 
